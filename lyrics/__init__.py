@@ -1,4 +1,4 @@
-" a -- Console radio player. "
+""" lyrics -- Lyrics fetcher & console music player. """
 
 version_info = (0, 0, 1)
 
