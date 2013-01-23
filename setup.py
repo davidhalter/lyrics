@@ -8,9 +8,10 @@ from lyrics import version, __project__, __license__
 with open('README.rst') as f:
     readme = f.read()
 
-
-install_requires = ['docopt']
-
+with open('requirements.txt', 'r') as f:
+    lines = f.readlines()
+    install_requires = [l.strip().strip('\n') for l in lines if l.strip()
+                                        and not l.strip().startswith('#')]
 
 meta = dict(
     name=__project__,
