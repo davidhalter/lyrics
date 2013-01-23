@@ -2,3 +2,4 @@
 *.swo
 .ropeproject
 *.pyc
+lyrics.egg-info
