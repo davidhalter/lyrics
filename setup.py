@@ -29,7 +29,7 @@ meta = dict(
 
     entry_points={
         'console_scripts': [
-            'lyrics = lyrics.main',
+            'lyrics = lyrics.apps.console',
         ]
     },
 
