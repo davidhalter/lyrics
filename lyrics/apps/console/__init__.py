@@ -24,4 +24,4 @@ import lyrics
 
 if __name__ == '__main__':
     arguments = docopt.docopt(__doc__, version=lyrics.__version__)
-    print(arguments)
+    lyrics.get('Mumford & Sons', 'Sigh no more')

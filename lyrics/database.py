@@ -4,20 +4,20 @@ import settings
 
 def load(artist, song, album):
     if settings.use_database:
-        return _LyricsDb.load()
+        return _LyricsDb.load(artist, song, album)
     else:
         return None
 
 
 def save(artist, song, album, lyrics):
     if settings.use_database:
-        return _LyricsDb.save()
+        return _LyricsDb.save(artist, song, album, lyrics)
 
 
 class _LyricsDb(object):
     _create_table = \
     """
-    CREATE TABLE lyrics(
+    CREATE TABLE IF NOT EXISTS lyrics(
         artist text not null,
         song text not null,
         album text not null,
@@ -28,12 +28,12 @@ class _LyricsDb(object):
     _select = "SELECT lyrics FROM lyrics WHERE artist=? and song=? and album=?"
     _insert = "INSERT INTO lyrics VALUES (?, ?, ?, ?)"
     def __init__(self):
-        self.__cursor = None
+        self._cursor = None
 
     @property
     def cursor(self):
         if not self._cursor:
-            self._connection = sqlite3.connect(settings.config_directory)
+            self._connection = sqlite3.connect(settings.database_path)
             self._cursor = self._connection.cursor()
             # Create table
             self._cursor.execute(self._create_table)
@@ -44,6 +44,7 @@ class _LyricsDb(object):
 
     def load(self, *args):
         self.cursor.execute(self._select, args)
-        return self.cursor.fetchone()[0]
+        row = self.cursor.fetchone()
+        return row[0] if row is not None else None
 
 _LyricsDb = _LyricsDb()
