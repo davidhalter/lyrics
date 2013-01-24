@@ -2,13 +2,17 @@
 Lyrics player
 
 Usage:
-  lyrcs
-  lyrcs -h | --help
-  lyrcs --version
+  lyrics
+  lyrics <path>
+  lyrics -h | --help
+  lyrics --version
+  lyrics --add <path>
 
 Options:
   -h --help     Show this screen.
+  --add         Add something to the music library.
   --version     Show version.
+  --debug       Write a debug log.
 """
 
 import sys
@@ -25,7 +29,8 @@ import app
 
 def start():
     arguments = docopt.docopt(__doc__, version=lyrics.__version__)
-    app.App()
+    print arguments
+    app.App(arguments['<path>'], debug=bool(arguments['<debug>']))
 
 if __name__ == '__main__':
     start()
