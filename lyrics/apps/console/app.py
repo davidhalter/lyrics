@@ -44,13 +44,11 @@ class App(object):
         while True:
             try:
                 c = self.window_list.getkey()
-                debug.debug('key pressed', repr(c))
                 keys.execute_event(self, c)
             except KeyboardInterrupt:
                 break
 
     def draw_screen(self):
-
         self.window_head = self._new_win(0, 0, None, 1)
         self.window_list = self._new_win(0, 1, None, -2)
         self.window_footer = self._new_win(0, -1, None, 1)
@@ -128,7 +126,7 @@ class App(object):
 
         self.window_list.refresh()
 
-    def move_cursor(self, count):
+    def move_cursor(self, count, horizontal_count=0):
         # later we could also check for other lists here.
         self.playlist.move_selected(count)
         self.draw_song_list()

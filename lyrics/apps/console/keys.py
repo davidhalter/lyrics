@@ -1,10 +1,19 @@
 """ keyboard events """
 
+from curses import ascii
+
 import player
+import debug
 
 registered_events = {}
 
-curses_mapping = ['']
+curses_mapping = {
+    'KEY_NPAGE':      '<PageDown>',
+    'KEY_PPAGE':      '<PageUp>',
+}
+for c in curses_mapping:
+    curses_mapping[c] = curses_mapping[c].upper()
+
 
 def key(*keys):
     def f(func):
@@ -14,6 +23,8 @@ def key(*keys):
         global registered_events
         for k in keys:
             # could check here for default key mappings
+            if k.startswith('<'):
+                k = k.upper()
             registered_events[k] = wrapper
 
         wrapper._is_mapping = True
@@ -23,6 +34,18 @@ def key(*keys):
 
 
 def execute_event(app, key_chr):
+    if len(key_chr) == 1:
+        # strip ctrl
+        key_chr = ascii.unctrl(key_chr)
+        if key_chr[0] == '^' and len(key_chr) == 2:
+            key_chr = '<C-%s>' % key_chr[1]
+
+    try:
+        key_chr = curses_mapping[key_chr]
+    except KeyError:
+        pass
+    debug.debug('key pressed', repr(key_chr))
+
     try:
         return registered_events[key_chr](app)
     except KeyError:
@@ -48,24 +71,49 @@ def move_right(app):
 def move_left(app):
     app.move_cursor(0, -1)
 
-@key('<C-u>')
+@key('<C-U>')
 def move_half_page_up(app):
     app.move_cursor(-int(app.max_list_y / 2))
 
-@key('<C-d>')
+@key('<C-D>')
 def move_half_page_down(app):
     app.move_cursor(int(app.max_list_y / 2))
 
-@key('<C-b>', '<PageUp>')
+@key('<C-B>', '<PageUp>')
 def move_page_up(app):
-    app.move_cursor(app.max_list_y)
-
-@key('<C-f>', '<PageDown>')
-def move_page_down(app):
     app.move_cursor(-app.max_list_y)
 
+@key('<C-F>', '<PageDown>')
+def move_page_down(app):
+    app.move_cursor(app.max_list_y)
+
 # ------------------------------------------------------------------------
-# player settings
+# gui modifications
+# ------------------------------------------------------------------------
+
+@key('<CR>', '<Enter>')
+def enter(app):
+    pass
+
+@key('s')
+def sort(app):
+    pass
+
+@key('r')
+def random(app):
+    pass
+
+@key('H', '<F3>')
+def help(app):
+    """help - shows this"""
+    pass
+
+@key('q')
+def quit(app):
+    raise KeyboardInterrupt()
+
+# ------------------------------------------------------------------------
+# player keys
 # ------------------------------------------------------------------------
 
 @key('m')
@@ -83,16 +131,3 @@ def next(app):
 @key('N')
 def previous(app):
     pass
-
-@key('r')
-def random(app):
-    pass
-
-@key('H', '<F3>')
-def help(app):
-    """help - shows this"""
-    pass
-
-@key('q')
-def quit(app):
-    raise KeyboardInterrupt()
