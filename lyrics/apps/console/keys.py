@@ -88,19 +88,19 @@ def move_left(app):
 
 @key('<C-U>')
 def move_half_page_up(app):
-    app.move_cursor(-int(app.max_list_y / 2))
+    app.move_cursor(-int(app.states.current_window.height / 2))
 
 @key('<C-D>')
 def move_half_page_down(app):
-    app.move_cursor(int(app.max_list_y / 2))
+    app.move_cursor(int(app.states.current_window.height / 2))
 
 @key('<C-B>', '<PageUp>')
 def move_page_up(app):
-    app.move_cursor(-app.max_list_y)
+    app.move_cursor(-app.states.current_window.height)
 
 @key('<C-F>', '<PageDown>')
 def move_page_down(app):
-    app.move_cursor(app.max_list_y)
+    app.move_cursor(app.states.current_window.height)
 
 # ------------------------------------------------------------------------
 # gui modifications

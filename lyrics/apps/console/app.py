@@ -123,10 +123,11 @@ class App(Window):
         self.head = self.create_window(Head, 0, 0, None, 1)
         if self.states.split_screen:
             golden = 0.382
-            self.song_list = self.create_window(SongList, 0, 1, golden, -2)
-            self.lyrics = self.create_window(Lyrics, golden, 1, 1 - golden, -2)
+            self.song_list = self.create_window(SongList, 0, 1, golden, -3)
+            self.lyrics = self.create_window(Lyrics, golden, 1, 1 - golden, -3)
         else:
-            self.song_list = self.create_window(SongList, 0, 1, None, -2)
+            self.song_list = self.create_window(SongList, 0, 1, None, -3)
+        self.status_line = self.create_window(StatusLine, 0, -2, None, 1)
         self.footer = self.create_window(Footer, 0, -1, None, 1)
         self.states.current_window = self.song_list
 
@@ -135,7 +136,7 @@ class App(Window):
 
 class Head(Window):
     def init(self):
-        info = " lyrics "
+        info = " lyrics - press H for help."
         self.win_curses.addstr(0, 0, info, curses.color_pair(4))
         right_str = "test"
         x, y = self.clean_position(- len(right_str) - 1, 0)
@@ -147,7 +148,7 @@ class Head(Window):
 
 class Footer(Window):
     def init(self):
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+        #self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
 
 
@@ -173,8 +174,7 @@ class Lyrics(Window):
 
 
 class SongList(Window):
-    def list(self):
-        self.max_list_y, self.max_list_x = self.win_curses.getmaxyx()
+    def init(self):
         self.win_curses.noutrefresh()
         self.win_curses.keypad(1)
 
