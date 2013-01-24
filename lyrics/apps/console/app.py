@@ -4,15 +4,15 @@ import curses
 
 import lyrics
 import playlist
+import keys
+import debug
 
 class App(object):
-    def __init__(self, path, debug=False):
+    def __init__(self, path):
         self.playlist = playlist.Playlist.from_path(path)
-        self.debug = debug
-
         self.playing = None
-        self.selected = None
 
+    def start(self):
         curses.wrapper(self.setup)  # must be called at the end (loop)
 
     def setup(self, stdscr):
@@ -43,25 +43,21 @@ class App(object):
     def run(self):
         while True:
             try:
-                c = self.window_list.getch()
-                print c
-                ret = self.keypress(c)
-                if (ret == -1):
-                    return
+                c = self.window_list.getkey()
+                debug.debug('key pressed', repr(c))
+                keys.execute_event(self, c)
             except KeyboardInterrupt:
                 break
 
     def draw_screen(self):
 
-        self.window_head = self._new_win(0, 0, 1)
+        self.window_head = self._new_win(0, 0, None, 1)
         self.window_list = self._new_win(0, 1, None, -2)
         self.window_footer = self._new_win(0, -1, None, 1)
 
         self.init_head()
         self.init_list()
         self.init_footer()
-
-        self.log.setScreen(self.window_footer)
 
         #self.stdscr.timeout(100)
         self.window_list.keypad(1)
@@ -91,14 +87,16 @@ class App(object):
         x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
 
+        debug.debug('new_win', x, y, width, height)
         return curses.newwin(height, width, y, x)
 
     def init_head(self):
         info = " lyrics "
         self.window_head.addstr(0, 0, info, curses.color_pair(4))
-        rightStr = "test"
-        x, y = self.clean_position(- len(rightStr) - 1, 0)
-        self.window_head.addstr(y, x, rightStr, curses.color_pair(2))
+        right_str = "test"
+        x, y = self.clean_position(- len(right_str) - 1, 0)
+        debug.debug('test', x, y, self.clean_position(None,None))
+        self.window_head.addstr(y, x, right_str, curses.color_pair(2))
         self.window_head.bkgd(' ', curses.color_pair(7))
         self.window_head.noutrefresh()
 
@@ -113,22 +111,27 @@ class App(object):
 
         self.window_list.move(1, 1)
         length, max_display = self.clean_position(-2, -1, 'list')
-        for i, song in enumerate(self.playlist.in_window_songs(max_display)):
-            if song == self.playing and song == self.selected:
+        for i, song in enumerate(self.playlist.visible_in_window(max_display)):
+            if song == self.playing and song == self.playlist.selected:
                 col = curses.color_pair(9)
-            elif song == self.selected:
+            elif song == self.playlist.selected:
                 col = curses.color_pair(6)
             elif song == self.playing:
                 col = curses.color_pair(4)
             else:
                 col = curses.color_pair(5)
 
-            if song == self.playing or song == self.selected:
+            if song == self.playing or song == self.playlist.selected:
                 self.window_list.hline(i + 1, 1, ' ', length, col)
 
-            self.window_list.addstr(i + 1, 1, song, col)
+            self.window_list.addstr(i + 1, 1, repr(song), col)
 
         self.window_list.refresh()
+
+    def move_cursor(self, count):
+        # later we could also check for other lists here.
+        self.playlist.move_selected(count)
+        self.draw_song_list()
 
     def init_footer(self):
         self.window_footer.bkgd(' ', curses.color_pair(7))

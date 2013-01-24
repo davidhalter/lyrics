@@ -2,8 +2,7 @@
 Lyrics player
 
 Usage:
-  lyrics
-  lyrics <path>
+  lyrics [<path>] [--debug]
   lyrics -h | --help
   lyrics --version
   lyrics --add <path>
@@ -24,13 +23,17 @@ d = os.path.dirname
 sys.path.insert(0, d(d(d(d(os.path.abspath(__file__))))))
 
 import lyrics
+import debug
 import app
 
 
 def start():
     arguments = docopt.docopt(__doc__, version=lyrics.__version__)
-    print arguments
-    app.App(arguments['<path>'], debug=bool(arguments['<debug>']))
+    debug.use_debugging = arguments['--debug']
+    debug.debug('started with', arguments)
+
+    a = app.App(arguments['<path>'])
+    a.start()
 
 if __name__ == '__main__':
     start()

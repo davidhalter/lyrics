@@ -2,6 +2,8 @@ import os
 
 import mutagen
 
+import debug
+
 
 class Song(object):
     def __init__(self, path):
@@ -31,13 +33,31 @@ class Song(object):
                     or string in self.artist
 
 
+class StringList(object):
+    def __init__(self, strings, index=0):
+        self.strings = strings
+        self.index = 0
 
-class Playlist(object):
-    def __init__(self, songs, parent=None):
+    def visible_in_window(self, count):
+        length = len(self.songs)
+        lookat = max(0, self.index - int(count / 2))
+        lookat = min(lookat, length - int(count / 2))
+
+        selection = self.songs[lookat:lookat + count]
+        return selection
+
+    def move_selected(self, count):
+        """count can be negative"""
+        self.index += count
+        self.index = min(max(self.index, 0), len(self.strings) - 1)
+
+
+class Playlist(StringList):
+    def __init__(self, songs, selected=None, parent=None):
+        super(Playlist, self).__init__(songs)
         self.songs = songs
-        print songs
+        self.selected = selected or self.songs[0] if self.songs else None
         self.parent = parent or self
-        self.lookat = 0
 
     def sort(self):
         self.songs = sorted(self.songs)
@@ -45,11 +65,24 @@ class Playlist(object):
     def search(self, string):
         return Playlist([s for s in self.songs if s.search(string)], self)
 
-    def in_window_songs(self, count):
-        return self.songs[self.lookat:self.lookat + count]
+    def _set_index(self):
+        try:
+            self.index = self.songs.index(self.selected)
+        except  ValueError:
+            self.index = 0
+
+    def visible_in_window(self, *args, **kwargs):
+        self._set_index()
+        return super(Playlist, self).visible_in_window(*args, **kwargs)
+
+    def move_selected(self, *args, **kwargs):
+        self._set_index()
+        super(Playlist, self).move_selected(*args, **kwargs)
+        self.selected = self.songs[self.index]
 
     @classmethod
     def from_path(cls, path):
+        debug.debug('load from', path, os.path.isdir(path))
         if path is None:
             return cls.from_library()
         if os.path.isfile(path):
@@ -58,7 +91,7 @@ class Playlist(object):
             paths = [p for p in os.listdir(path) if os.path.isdir(p)]
         else:
             return cls.from_library()
-        print paths
+        debug.debug('song paths', paths)
         return cls([Song(p) for p in paths])
 
     @classmethod
