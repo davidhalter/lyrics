@@ -13,13 +13,13 @@ class Song(object):
 
     def __repr__(self):
         if self.artist is None:
-            return str(self.path)
+            return str(self.file_name)
         return "%s - %s" % (self.artist, self.song)
 
     def format(self, max_len):
         """produce something liket this: 'sigh no.. - mumford a..'"""
         if self.artist is None:
-            return self.path[:max_len - 2]  + '..'
+            return self.file_name[:max_len - 2]  + '..'
 
         song = str(self.song)
         new_len = int(0.5 * max_len)
@@ -32,6 +32,10 @@ class Song(object):
             artist = artist[:max_a_len - 2] + '..'
 
         return "%s - %s" % (song, artist)
+
+    @property
+    def file_name(self):
+        return os.path.basename(self.path)
 
     @property
     def _information(self):
@@ -111,7 +115,8 @@ class Playlist(StringList):
 
     @classmethod
     def from_path(cls, path):
-        debug.debug('load from', path, os.path.isdir(path))
+        path = os.path.expandvars(os.path.expanduser(path))
+        debug.debug('load from', path)
         if path is None:
             return cls.from_library()
         if os.path.isfile(path):
@@ -121,7 +126,7 @@ class Playlist(StringList):
         else:
             return cls.from_library()
         debug.debug('song paths', paths)
-        return cls([Song(p) for p in paths])
+        return cls([Song(os.path.join(path, p)) for p in paths])
 
     @classmethod
     def from_library(cls):
