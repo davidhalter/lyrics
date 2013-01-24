@@ -33,8 +33,6 @@ class App(object):
         curses.init_pair(8, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
         curses.init_pair(9, curses.COLOR_BLACK, curses.COLOR_GREEN)
 
-        self.max_y, self.max_x = self.stdscr.getmaxyx()
-
         self.stdscr.nodelay(0)
         self.draw_screen()
 
@@ -44,11 +42,16 @@ class App(object):
         while True:
             try:
                 c = self.window_list.getkey()
+                if c == 'KEY_RESIZE':
+                    self.draw_screen()
+                    continue
                 keys.execute_event(self, c)
             except KeyboardInterrupt:
                 break
 
     def draw_screen(self):
+        self.max_y, self.max_x = self.stdscr.getmaxyx()
+
         self.window_head = self._new_win(0, 0, None, 1)
         self.window_list = self._new_win(0, 1, None, -2)
         self.window_footer = self._new_win(0, -1, None, 1)
@@ -108,7 +111,7 @@ class App(object):
         self.window_list.box()
 
         self.window_list.move(1, 1)
-        length, max_display = self.clean_position(-2, -1, 'list')
+        length, max_display = self.clean_position(-2, -2, 'list')
         for i, song in enumerate(self.playlist.visible_in_window(max_display)):
             if song == self.playing and song == self.playlist.selected:
                 col = curses.color_pair(9)

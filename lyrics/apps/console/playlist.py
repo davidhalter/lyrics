@@ -8,16 +8,20 @@ import debug
 class Song(object):
     def __init__(self, path):
         self.path = path
+        self.__information = None
 
     def __repr__(self):
         return "%s - %s" % (self.artist, self.song)
 
     @property
     def _information(self):
-        mutagen.File(self.path)
+        if self.__information:
+            self.__information = mutagen.File(self.path)
+        return self.__information
 
     @property
     def artist(self):
+        debug.debug(self._information)
         return 'bar'
 
     @property
@@ -88,7 +92,7 @@ class Playlist(StringList):
         if os.path.isfile(path):
             paths = [path]
         elif os.path.isdir(path):
-            paths = [p for p in os.listdir(path) if os.path.isdir(p)]
+            paths = [p for p in os.listdir(path) if not os.path.isdir(p)]
         else:
             return cls.from_library()
         debug.debug('song paths', paths)
