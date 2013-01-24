@@ -1,6 +1,6 @@
 import os
 
-import mutagen
+import mutagen.mp3
 
 import debug
 
@@ -9,28 +9,53 @@ class Song(object):
     def __init__(self, path):
         self.path = path
         self.__information = None
+        self.broken = False
 
     def __repr__(self):
+        if self.artist is None:
+            return str(self.path)
         return "%s - %s" % (self.artist, self.song)
+
+    def format(self, max_len):
+        """produce something liket this: 'sigh no.. - mumford a..'"""
+        if self.artist is None:
+            return self.path[:max_len - 2]  + '..'
+
+        song = str(self.song)
+        new_len = int(0.5 * max_len)
+        if len(song) > new_len:
+            song = song[:new_len - 2] + '..'
+
+        max_a_len = max_len - len(song) - 3
+        artist = str(self.artist)
+        if len(artist) > max_a_len:
+            artist = artist[:max_a_len - 2] + '..'
+
+        return "%s - %s" % (song, artist)
 
     @property
     def _information(self):
-        if self.__information:
-            self.__information = mutagen.File(self.path)
+        if self.__information is None:
+            debug.debug('mutagen before', self.path)
+            try:
+                self.__information = mutagen.File(self.path)
+            except mutagen.mp3.HeaderNotFoundError:
+                self.__information = {}
+                self.broken = True
         return self.__information
 
     @property
     def artist(self):
-        debug.debug(self._information)
-        return 'bar'
+        return self._information.get('TPE1', None)
 
     @property
     def song(self):
-        return 'foo'
+        song = self._information.get('TIT2', self.path)
+        return song
 
     @property
     def album(self):
-        return 'baz'
+        return self._information.get('TALB', None)
 
     def search(self, string):
         return string in self.album or string in self.song \
