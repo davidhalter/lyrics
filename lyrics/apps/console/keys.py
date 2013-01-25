@@ -4,6 +4,7 @@ import curses.ascii
 
 import player
 import debug
+from states import state
 
 registered_events = {}
 
@@ -13,6 +14,8 @@ curses_mapping = {
     curses.KEY_DOWN:        '<Down>',
     curses.KEY_UP:          '<Up>',
     curses.ascii.NL:        '<Enter>',
+    curses.ascii.ESC:       '<ESC>',
+    curses.ascii.SP:        '<SPACE>',
     curses.KEY_F1:          '<F1>',
     curses.KEY_F2:          '<F2>',
     curses.KEY_F3:          '<F3>',
@@ -100,19 +103,19 @@ def move_left(main_app):
 
 @key('<C-U>', 'u')
 def move_half_page_up(main_app):
-    main_app.move_cursor(-int(main_app.states.current_window.height / 2))
+    main_app.move_cursor(-int(state.current_window.height / 2))
 
 @key('<C-D>', 'd')
 def move_half_page_down(main_app):
-    main_app.move_cursor(int(main_app.states.current_window.height / 2))
+    main_app.move_cursor(int(state.current_window.height / 2))
 
 @key('<C-B>', '<PageUp>')
 def move_page_up(main_app):
-    main_app.move_cursor(-main_app.states.current_window.height)
+    main_app.move_cursor(-state.current_window.height)
 
 @key('<C-F>', '<PageDown>')
 def move_page_down(main_app):
-    main_app.move_cursor(main_app.states.current_window.height)
+    main_app.move_cursor(state.current_window.height)
 
 # ------------------------------------------------------------------------
 # gui modifications
@@ -120,7 +123,7 @@ def move_page_down(main_app):
 
 @key('<CR>', '<Enter>', '<C-J>')
 def enter(main_app):
-    player.play(main_app.states.playlist.selected.path, lambda: next(main_app))
+    player.play(state.playlist.selected.path, lambda: next(main_app))
 
 @key('s')
 def sort(main_app):
@@ -133,7 +136,7 @@ def random(main_app):
 @key('H', '<F3>')
 def help(main_app):
     """help - shows this"""
-    main_app.states.show_help = not main_app.states.show_help
+    state.show_help = not state.show_help
     main_app.draw()
 
 @key('q')

@@ -8,46 +8,13 @@ import keys
 import debug
 import player
 
-
-class States(object):
-    """State machine of the app"""
-    def __init__(self, playlist):
-        self.playlist = playlist
-
-        self.split_screen = False
-        self._show_help = False
-        self.playing = None
-        self.current_window = None
-        self._show_lyrics = False
-
-    @property
-    def show_help(self):
-        return self._show_help
-
-    @show_help.setter
-    def show_help(self, value):
-        if value:
-            self.split_screen = True
-        else:
-            self.split_screen = self.show_lyrics
-        self._show_help = value
-
-    @property
-    def show_lyrics(self):
-        return self._show_lyrics
-
-    @show_lyrics.setter
-    def show_lyrics(self, value):
-        if value:
-            self.split_screen = True
-        self._show_lyrics = value
+from states import state
 
 
 class Window(object):
-    def __init__(self, states, x, y, width, height):
+    def __init__(self, x, y, width, height):
         debug.debug('new_win', self.__class__.__name__, x, y, width, height)
 
-        self.states = states
         self.win_curses = curses.newwin(height, width, y, x)
         self.height, self.width = self.win_curses.getmaxyx()
         self.init()
@@ -83,8 +50,7 @@ class Window(object):
 
 class App(Window):
     def __init__(self, path):
-        p = playlist.Playlist.from_path(path)
-        self.states = States(p)
+        state.playlist = playlist.Playlist.from_path(path)
 
     def start(self):
         curses.wrapper(self.setup)  # the infinite loop
@@ -130,14 +96,14 @@ class App(Window):
     def create_window(self, cls, x, y , width, height):
         x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
-        return cls(self.states, x, y, width, height)
+        return cls(x, y, width, height)
 
     def move_cursor(self, y, x=0):
-        return self.states.current_window.move_cursor(y, x)
+        return state.current_window.move_cursor(y, x)
 
     def draw(self):
         self.head = self.create_window(Head, 0, 0, None, 1)
-        if self.states.split_screen:
+        if state.split_screen:
             golden = 0.382
             self.song_list = self.create_window(SongList, 0, 1, golden, -3)
             self.lyrics = self.create_window(Lyrics, golden, 1, 1 - golden, -3)
@@ -145,7 +111,7 @@ class App(Window):
             self.song_list = self.create_window(SongList, 0, 1, None, -3)
         self.status_line = self.create_window(StatusLine, 0, -2, None, 1)
         self.footer = self.create_window(Footer, 0, -1, None, 1)
-        self.states.current_window = self.song_list
+        state.current_window = self.song_list
 
         curses.doupdate()
 
@@ -185,7 +151,7 @@ class Lyrics(Window):
         length, max_display = self.clean_position(-2, -2)
 
         col = curses.color_pair(1)
-        if self.states.show_help:
+        if state.show_help:
             txt = "Help\n" + keys.help_documentation()
             txt += "\nWritten by David Halter -> http://jedidjah.ch"
         else:
@@ -211,18 +177,18 @@ class SongList(Window):
 
         self.win_curses.move(1, 1)
         length, max_display = self.clean_position(-2, -2)
-        playlist = self.states.playlist
+        playlist = state.playlist
         for i, song in enumerate(playlist.visible_in_window(max_display)):
-            if song == self.states.playing and song == playlist.selected:
+            if song == state.playing and song == playlist.selected:
                 col = curses.color_pair(9)
             elif song == playlist.selected:
                 col = curses.color_pair(6)
-            elif song == self.states.playing:
+            elif song == state.playing:
                 col = curses.color_pair(4)
             else:
                 col = curses.color_pair(5)
 
-            if song == self.states.playing or song == playlist.selected:
+            if song == state.playing or song == playlist.selected:
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
 
             self.win_curses.addstr(i + 1, 1, song.format(length), col)
@@ -231,5 +197,5 @@ class SongList(Window):
 
     def move_cursor(self, y, x=0):
         # later we could also check for other lists here.
-        self.states.playlist.move_selected(y)
+        state.playlist.move_selected(y)
         self.draw()
