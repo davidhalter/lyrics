@@ -45,6 +45,9 @@ class Window(object):
     def draw(self):
         pass
 
+    def add_str(self, x, y, string, col=None):
+        self.win_curses.addstr(y, x, string, col)
+
     def clean_position(self, x, y, float_floor=False):
         width, height = self.width, self.height
         if isinstance(x, float):
@@ -77,7 +80,8 @@ class App(Window):
         curses.wrapper(self.setup)  # the infinite loop
 
     def setup(self, stdscr):
-        self.stdscr = stdscr
+        self.win_curses = stdscr
+        self.height, self.width = self.win_curses.getmaxyx()
         try:
             curses.curs_set(0)
         except:
@@ -93,7 +97,7 @@ class App(Window):
         curses.init_pair(8, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
         curses.init_pair(9, curses.COLOR_BLACK, curses.COLOR_GREEN)
 
-        self.stdscr.nodelay(0)
+        self.win_curses.nodelay(0)
         self.draw()
 
         self.run()
@@ -118,8 +122,6 @@ class App(Window):
         return self.states.current_window.move_cursor(y, x)
 
     def draw(self):
-        self.height, self.width = self.stdscr.getmaxyx()
-
         self.head = self.create_window(Head, 0, 0, None, 1)
         if self.states.split_screen:
             golden = 0.382
@@ -140,7 +142,6 @@ class Head(Window):
         self.win_curses.addstr(0, 0, info, curses.color_pair(4))
         right_str = "test"
         x, y = self.clean_position(- len(right_str) - 1, 0)
-        debug.debug('test', x, y, self.clean_position(None, None))
         self.win_curses.addstr(y, x, right_str, curses.color_pair(2))
         self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
@@ -161,13 +162,19 @@ class StatusLine(Window):
 class Lyrics(Window):
     def init(self):
         self.win_curses.noutrefresh()
+        self.win_curses.keypad(1)
 
-    def draw_lyrics(self):
+    def draw(self):
         self.win_curses.erase()
-        self.win_curses.box()
+        #self.win_curses.box()
 
-        self.win_curses.move(1, 1)
         length, max_display = self.clean_position(-2, -2, 'list')
+
+        col = curses.color_pair(1)
+        self.add_str(0, 1, 'asdf', col)
+        self.win_curses.attrset(curses.A_REVERSE)
+        self.win_curses.bkgd(' ')
+        self.win_curses.refresh()
 
     def _show_lyrics(self):
         print(lyrics.get('Mumford & Sons', 'Sigh no more'))

@@ -86,11 +86,11 @@ def move_right(app):
 def move_left(app):
     app.move_cursor(0, -1)
 
-@key('<C-U>')
+@key('<C-U>', 'u')
 def move_half_page_up(app):
     app.move_cursor(-int(app.states.current_window.height / 2))
 
-@key('<C-D>')
+@key('<C-D>', 'd')
 def move_half_page_down(app):
     app.move_cursor(int(app.states.current_window.height / 2))
 

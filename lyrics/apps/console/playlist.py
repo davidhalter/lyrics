@@ -125,7 +125,7 @@ class Playlist(StringList):
             paths = [p for p in os.listdir(path) if not os.path.isdir(p)]
         else:
             return cls.from_library()
-        debug.debug('song paths', paths)
+        #debug.debug('song paths', paths)
         return cls([Song(os.path.join(path, p)) for p in paths])
 
     @classmethod
