@@ -1,5 +1,6 @@
 """ keyboard events """
 
+import os
 import curses.ascii
 
 import player
@@ -164,7 +165,12 @@ def pause(main_app):
 
 @key('n')
 def next(main_app):
-    p = state.playlist.next(state.playing)
+    while True:
+        p = state.playlist.next(state.playing)
+        if p is not None and (p.broken or not os.path.exists(p.path)):
+            continue
+        break
+
     if p is None and state.repeat:
         p = state.playlist.songs[0]
     if p:
