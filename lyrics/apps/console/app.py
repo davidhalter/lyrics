@@ -73,10 +73,6 @@ class App(Window):
     def setup(self, stdscr):
         self.win_curses = stdscr
         self.height, self.width = self.win_curses.getmaxyx()
-        try:
-            curses.curs_set(0)
-        except:
-            pass
 
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
@@ -117,6 +113,7 @@ class App(Window):
         return state.current_window.move_cursor(y, x)
 
     def draw(self):
+        # setup windows
         self.head = self.create_window(Head, 0, 0, None, 1)
         if state.split_screen:
             golden = 0.382
@@ -128,12 +125,23 @@ class App(Window):
         self.footer = self.create_window(Footer, 0, -1, None, 1)
         state.current_window = self.song_list
 
+        # setup cursor
+        if state.search_mode:
+            curses.setsyx(0, state.search_cursor + 1)
+        try:
+            curses.curs_set(2 if state.search_mode else 0)
+        except:
+            pass
+
         curses.doupdate()
 
 
 class Head(Window):
     def init(self):
-        info = "lyrics - press H for help."
+        if state.search_mode:
+            info = '/' + state.search
+        else:
+            info = "lyrics - press H for help."
         self.add_str(0, 0, info, curses.color_pair(4))
         self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
@@ -200,7 +208,6 @@ class SongList(Window):
         self.win_curses.erase()
         self.win_curses.box()
 
-        self.win_curses.move(1, 1)
         length, max_display = self.clean_position(-2, -2)
         playlist = state.playlist
         for i, song in enumerate(playlist.visible_in_window(max_display)):

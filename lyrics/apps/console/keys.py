@@ -8,13 +8,12 @@ import player
 import debug
 from states import state
 
-registered_events = {}
-
 curses_mapping = {
     curses.KEY_NPAGE:       '<PageDown>',
     curses.KEY_PPAGE:       '<PageUp>',
     curses.KEY_DOWN:        '<Down>',
     curses.KEY_UP:          '<Up>',
+    curses.KEY_BACKSPACE:   '<BS>',
     curses.KEY_LEFT:        '<Left>',
     curses.KEY_RIGHT:       '<Right>',
     curses.ascii.NL:        '<Enter>',
@@ -37,11 +36,14 @@ for c in curses_mapping:
     curses_mapping[c] = curses_mapping[c].upper()
 
 funcs = {}
+registered_events = {'normal': {}, 'search': {}}
 
 
-def key(*keys):
+def key(*keys, **kwargs):
+    mode = kwargs.get('mode', 'normal')
     def f(func):
-        funcs[func] = keys
+        if mode == 'normal':
+            funcs[func] = keys
         def wrapper(*args, **kwargs):
             func(*args, **kwargs)
 
@@ -50,7 +52,7 @@ def key(*keys):
             # could check here for default key mappings
             if k.startswith('<'):
                 k = k.upper()
-            registered_events[k] = wrapper
+            registered_events[mode][k] = wrapper
 
         wrapper._is_mapping = True
         return wrapper
@@ -82,18 +84,30 @@ def event_handler(main_app, key_chr):
 
     debug.debug('key pressed', repr(key_chr), key_str)
 
-    if state.last_command:
-        # cleanup
-        state.last_command = ''
-        state.keyboard_repeat = ''
+    if state.search_mode:
+        if key_str == '<SPACE>':
+            key_str = ' '
+        allowed = r'-_ +*/%$&!"\'\?!@`,.;:<>^|#[](){}~='
+        if key_str.isalnum() or key_str in allowed:
+            search_write(key_str)
+        else:
+            try:
+                registered_events['search'][key_str](main_app)
+            except KeyError:
+                pass
 
-    if re.match('\d', key_str):
-        state.keyboard_repeat += key_str
     else:
-        execute_key_command(main_app, key_str,
-                                    state.keyboard_repeat)
+        if state.last_command:
+            # cleanup
+            state.last_command = ''
+            state.keyboard_repeat = ''
 
-        state.last_command = key_str
+        if re.match('\d', key_str):
+            state.keyboard_repeat += key_str
+        else:
+            execute_key_command(main_app, key_str, state.keyboard_repeat)
+
+            state.last_command = key_str
 
     main_app.draw()
 
@@ -105,7 +119,7 @@ def execute_key_command(main_app, command, repeat):
         else:
             count = 1
         for i in range(count):
-            registered_events[command](main_app)
+            registered_events['normal'][command](main_app)
     except KeyError:
         pass
 
@@ -187,15 +201,15 @@ def repeat_solo(main_app):
 def help(main_app):
     """help - shows this"""
     state.show_help = not state.show_help
-    main_app.draw()
 
 @key('q')
 def quit(main_app):
     raise KeyboardInterrupt()
 
-@key('/')
-def search(main_app):
-    raise
+@key('<Esc>')
+def cancel_operation(main_app):
+    state.show_help = False
+
 
 # ------------------------------------------------------------------------
 # player keys
@@ -261,3 +275,65 @@ def previous(main_app):
     if p is not None:
         state.playing = p
         start_playing(main_app)
+
+# ------------------------------------------------------------------------
+# search
+# ------------------------------------------------------------------------
+
+@key('/')
+def search(main_app):
+    state.search_mode = True
+    state.search = ''
+    state.search_list.append('')
+    state.search_index = len(state.search_list) - 1
+    state.search_cursor = 0
+
+def search_write(char):
+    """No decorator here, because that is handled by the event handler"""
+    state.search = state.search[:state.search_cursor] + char \
+                    + state.search[state.search_cursor:]
+    state.search_cursor += 1
+
+@key('<BS>', mode='search')
+def search_backspace(main_app):
+    if state.search:
+        state.search = state.search[:-1]
+    else:
+        search_cancel(main_app)
+
+@key('<Enter>', mode='search')
+def search_enter(main_app):
+    state.search_mode = False
+    # TODO search
+
+@key('<Esc>', mode='search')
+def search_cancel(main_app):
+    if state.search:
+        state.search_list[state.search_index] = state.search
+    else:
+        state.search_list.pop()
+    state.search_mode = False
+    #debug.debug('search_list', state.search_list)
+
+@key('<Left>', mode='search')
+def search_left(main_app):
+    state.search_cursor = max(state.search_cursor - 1, 0)
+
+@key('<Right>', mode='search')
+def search_right(main_app):
+    state.search_cursor = min(state.search_cursor + 1, len(state.search))
+
+@key('<Down>', mode='search')
+def search_down(main_app):
+    state.search_list[state.search_index] = state.search
+    state.search_index = min(state.search_index + 1,
+                             len(state.search_list) - 1)
+    state.search = state.search_list[state.search_index]
+    state.search_cursor = len(state.search)
+
+@key('<Up>', mode='search')
+def search_up(main_app):
+    state.search_list[state.search_index] = state.search
+    state.search_index = max(state.search_index - 1, 0)
+    state.search = state.search_list[state.search_index]
+    state.search_cursor = len(state.search)

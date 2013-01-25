@@ -4,8 +4,15 @@ class States(object):
         self.playlist = None
 
         self.split_screen = False
+        self.search_list = []
+        self.search_index = 0
+        self.search_cursor = 0
+        self.search = ''
+        self.search_mode = False
+
         self.playing = None
         self.current_window = None
+
         self.keyboard_repeat = ''
         self.command_list = []
 
