@@ -10,12 +10,13 @@ import os
 
 def popen_with_callback(on_exit=None, *args, **kwargs):
     """
-    Normal suprocess.Popen that calls 
+    Normal suprocess.Popen that calls.
     """
     def run_in_thread(on_exit, *args, **kwargs):
         global process
         process = subprocess.Popen(*args, **kwargs)
         process.wait()
+        process = None
         if on_exit is not None:
             return on_exit()
 

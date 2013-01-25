@@ -116,6 +116,15 @@ class Playlist(StringList):
         super(Playlist, self).move_selected(*args, **kwargs)
         self.selected = self.songs[self.index]
 
+    def next(self, song):
+        if song is None:
+            return self.selected
+        i = self.songs.index(song)
+        try:
+            return self.songs[i + 1]
+        except IndexError:
+            return None
+
     @classmethod
     def from_path(cls, path):
         path = os.path.expandvars(os.path.expanduser(path))
