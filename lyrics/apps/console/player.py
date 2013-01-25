@@ -85,7 +85,10 @@ def close():
     global process
     send_command("q")
     if process is not None:
-        os.kill(process.pid, 15)
+        try:
+            os.kill(process.pid, 15)
+        except OSError:  # no such process (already been killed)
+            pass
     process = None
 
 def volume_up():

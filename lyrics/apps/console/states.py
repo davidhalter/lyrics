@@ -4,14 +4,28 @@ class States(object):
         self.playlist = None
 
         self.split_screen = False
-        self.random = False
         self.playing = None
         self.current_window = None
 
+        self._random = False
         self._show_help = False
         self._show_lyrics = False
         self._repeat = True
         self._repeat_solo = False
+
+    @property
+    def random(self):
+        return self._random
+
+    @random.setter
+    def random(self, value):
+        self._random = value
+        if self.playing is None:
+            self.random_history = []
+            self.random_history_index = -1
+        else:
+            self.random_history = [self.playing]
+            self.random_history_index = 0
 
     @property
     def repeat(self):

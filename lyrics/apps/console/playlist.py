@@ -126,6 +126,16 @@ class Playlist(StringList):
         except IndexError:
             return None
 
+    def previous(self, song):
+        if song is None:
+            return self.selected
+        i = self.songs.index(song)
+        if i == 0:
+            return None
+        else:
+            return self.songs[i - 1]
+
+
     def random(self, song=None):
         if len(self.songs) == 1:
             return self.songs[0]
@@ -135,7 +145,7 @@ class Playlist(StringList):
             s = random.randint(0, len(self.songs) - 1)
             if s != song:
                 break
-        return s
+        return self.songs[s]
 
     @classmethod
     def from_path(cls, path):

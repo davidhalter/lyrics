@@ -80,12 +80,15 @@ def execute_event(app, key_chr):
     debug.debug('key pressed', repr(key_chr), key_str)
 
     try:
-        return registered_events[key_str](app)
+        result = registered_events[key_str](app)
     except KeyError:
-        pass
+        result = None
 
-def start_playing(main_app):
-    player.play(state.playing.path, lambda: next(main_app))
+    app.draw()
+    return result
+
+def start_playing(*args, **kwargs):
+    player.play(state.playing.path, lambda: next(*args, **kwargs))
 
 # ------------------------------------------------------------------------
 # movements
@@ -131,15 +134,23 @@ def move_page_down(main_app):
 def enter(main_app):
     state.playing = state.playlist.selected
     start_playing(main_app)
-    main_app.draw()
 
 @key('s')
 def sort(main_app):
     pass
 
-@key('r')
+@key('c')
 def random(main_app):
-    pass
+    """ random - by chance """
+    state.random = True
+
+@key('r')
+def repeat(main_app):
+    state.repeat = not state.repeat
+
+@key('R')
+def repeat_solo(main_app):
+    state.repeat_solo = not state.repeat_solo
 
 @key('H', '<F3>')
 def help(main_app):
@@ -165,19 +176,43 @@ def pause(main_app):
 
 @key('n')
 def next(main_app):
-    while True:
-        p = state.playlist.next(state.playing)
-        if p is not None and (p.broken or not os.path.exists(p.path)):
-            continue
-        break
+    if state.random:
+        state.random_history_index += 1
+        if state.random_history_index >= len(state.random_history):
+            p = state.playlist.random(state.playing)
+            state.random_history.append(p)
+        else:
+            p = state.random_history[state.random_history_index]
+    else:
+        while True:
+            p = state.playlist.next(state.playing)
+            if p is not None and (p.broken or not os.path.exists(p.path)):
+                continue
+            break
 
-    if p is None and state.repeat:
-        p = state.playlist.songs[0]
+        if p is None and state.repeat:
+            p = state.playlist.songs[0]
     if p:
         state.playing = p
         start_playing(main_app)
-    main_app.draw()
 
 @key('N')
 def previous(main_app):
-    pass
+    if state.random:
+        if state.random_history_index <= 0:
+            return
+
+        state.random_history_index -= 1
+        p = state.random_history[state.random_history_index]
+    else:
+        while True:
+            p = state.playlist.previous(state.playing)
+            if p is not None and (p.broken or not os.path.exists(p.path)):
+                continue
+            break
+
+        if p is None and state.repeat:
+            p = state.playlist.songs[0]
+    if p is not None:
+        state.playing = p
+        start_playing(main_app)
