@@ -98,11 +98,18 @@ class Playlist(StringList):
         self.selected = selected or self.songs[0] if self.songs else None
         self.parent = parent or self
 
+    def __len__(self):
+        return len(self.songs)
+
+    def __getitem__(self, key):
+        return self.songs[key]
+
     def sort(self):
         self.songs = sorted(self.songs)
 
     def search(self, string):
-        return Playlist([s for s in self.songs if s.search(string)], self)
+        #return Playlist([s for s in self.songs if s.search(string)], self)
+        return Playlist([s for s in self.songs if string in s.path], self)
 
     def _set_index(self):
         try:

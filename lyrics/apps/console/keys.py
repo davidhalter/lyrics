@@ -89,7 +89,7 @@ def event_handler(main_app, key_chr):
             key_str = ' '
         allowed = r'-_ +*/%$&!"\'\?!@`,.;:<>^|#[](){}~='
         if key_str.isalnum() or key_str in allowed:
-            search_write(key_str)
+            _search_write(key_str)
         else:
             try:
                 registered_events['search'][key_str](main_app)
@@ -250,7 +250,7 @@ def next(main_app):
             break
 
         if p is None and state.repeat:
-            p = state.playlist.songs[0]
+            p = state.playlist[0]
     if p:
         state.playing = p
         start_playing(main_app)
@@ -271,7 +271,7 @@ def previous(main_app):
             break
 
         if p is None and state.repeat:
-            p = state.playlist.songs[0]
+            p = state.playlist[0]
     if p is not None:
         state.playing = p
         start_playing(main_app)
@@ -287,12 +287,20 @@ def search(main_app):
     state.search_list.append('')
     state.search_index = len(state.search_list) - 1
     state.search_cursor = 0
+    _search_update()
 
-def search_write(char):
+def _search_write(char):
     """No decorator here, because that is handled by the event handler"""
     state.search = state.search[:state.search_cursor] + char \
                     + state.search[state.search_cursor:]
     state.search_cursor += 1
+    _search_update()
+
+def _search_update():
+    playlist = state.playlist.parent
+    for word in re.split('[- _]*', state.search):
+        playlist.search(word)
+    state.playlist = playlist
 
 @key('<BS>', mode='search')
 def search_backspace(main_app):
@@ -300,11 +308,12 @@ def search_backspace(main_app):
         state.search = state.search[:-1]
     else:
         search_cancel(main_app)
+    _search_update()
 
 @key('<Enter>', mode='search')
 def search_enter(main_app):
     state.search_mode = False
-    # TODO search
+    _search_update()
 
 @key('<Esc>', mode='search')
 def search_cancel(main_app):
@@ -313,6 +322,7 @@ def search_cancel(main_app):
     else:
         state.search_list.pop()
     state.search_mode = False
+    state.playlist = state.playlist.parent
     #debug.debug('search_list', state.search_list)
 
 @key('<Left>', mode='search')
@@ -330,6 +340,7 @@ def search_down(main_app):
                              len(state.search_list) - 1)
     state.search = state.search_list[state.search_index]
     state.search_cursor = len(state.search)
+    _search_update()
 
 @key('<Up>', mode='search')
 def search_up(main_app):
@@ -337,3 +348,4 @@ def search_up(main_app):
     state.search_index = max(state.search_index - 1, 0)
     state.search = state.search_list[state.search_index]
     state.search_cursor = len(state.search)
+    _search_update()
