@@ -6,6 +6,7 @@ import lyrics
 import playlist
 import keys
 import debug
+import player
 
 
 class States(object):
@@ -13,10 +14,11 @@ class States(object):
     def __init__(self, playlist):
         self.playlist = playlist
 
-        self.split_screen = True
-        self._show_help = True
+        self.split_screen = False
+        self._show_help = False
         self.playing = None
         self.current_window = None
+        self._show_lyrics = False
 
     @property
     def show_help(self):
@@ -26,7 +28,19 @@ class States(object):
     def show_help(self, value):
         if value:
             self.split_screen = True
+        else:
+            self.split_screen = self.show_lyrics
         self._show_help = value
+
+    @property
+    def show_lyrics(self):
+        return self._show_lyrics
+
+    @show_lyrics.setter
+    def show_lyrics(self, value):
+        if value:
+            self.split_screen = True
+        self._show_lyrics = value
 
 
 class Window(object):
@@ -48,16 +62,12 @@ class Window(object):
     def add_str(self, x, y, string, col=None):
         self.win_curses.addstr(y, x, string, col)
 
-    def clean_position(self, x, y, float_floor=False):
+    def clean_position(self, x, y):
         width, height = self.width, self.height
         if isinstance(x, float):
             x = int(width * x)
-            if float_floor:
-                x += 1
         if isinstance(y, float):
             y = int(height * y)
-            if float_floor:
-                y += 1
 
         if x is None:
             x = width
@@ -111,10 +121,14 @@ class App(Window):
                     continue
                 keys.execute_event(self, c)
             except KeyboardInterrupt:
+                # doesn't work with ctrl c: http://bugs.python.org/issue1687125
                 break
 
+        # cleanup
+        player.close()
+
     def create_window(self, cls, x, y , width, height):
-        x, y = self.clean_position(x, y, float_floor=True)
+        x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
         return cls(self.states, x, y, width, height)
 
@@ -168,11 +182,18 @@ class Lyrics(Window):
         self.win_curses.erase()
         #self.win_curses.box()
 
-        length, max_display = self.clean_position(-2, -2, 'list')
+        length, max_display = self.clean_position(-2, -2)
 
         col = curses.color_pair(1)
-        self.add_str(0, 1, 'asdf', col)
-        self.win_curses.attrset(curses.A_REVERSE)
+        if self.states.show_help:
+            txt = "Help\n" + keys.help_documentation()
+            txt += "\nWritten by David Halter -> http://jedidjah.ch"
+        else:
+            txt = ""
+
+        for i, line in enumerate(txt.splitlines()):
+            self.add_str(1, i + 1, line, col)
+
         self.win_curses.bkgd(' ')
         self.win_curses.refresh()
 
@@ -190,7 +211,7 @@ class SongList(Window):
         self.win_curses.box()
 
         self.win_curses.move(1, 1)
-        length, max_display = self.clean_position(-2, -2, 'list')
+        length, max_display = self.clean_position(-2, -2)
         playlist = self.states.playlist
         for i, song in enumerate(playlist.visible_in_window(max_display)):
             if song == self.states.playing and song == playlist.selected:

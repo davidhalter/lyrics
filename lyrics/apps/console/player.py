@@ -28,7 +28,7 @@ def play(uri):
     """ use mplayer to play a stream """
     global process
     close()
-    file_name = uri.split("?")[0] if uri.starts_with('http://') else uri
+    file_name = uri.split("?")[0] if uri.startswith('http://') else uri
 
     is_play_list = file_name[-4:] in ('.m3u', '.pls')
 
@@ -40,7 +40,7 @@ def play(uri):
                                stdout=subprocess.PIPE,
                                stdin=subprocess.PIPE,
                                stderr=subprocess.STDOUT)
-    thread.start_new_thread(updateStatus, ())
+    #thread.start_new_thread(updateStatus, ())
 
 def sendCommand(command):
     """ send keystroke command to mplayer """

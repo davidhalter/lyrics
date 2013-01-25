@@ -19,7 +19,10 @@ class Song(object):
     def format(self, max_len):
         """produce something liket this: 'sigh no.. - mumford a..'"""
         if self.artist is None:
-            return self.file_name[:max_len - 2]  + '..'
+            if len(self.file_name) > max_len:
+                return self.file_name[:max_len - 2]  + '..'
+            else:
+                return self.file_name
 
         song = str(self.song)
         new_len = int(0.5 * max_len)

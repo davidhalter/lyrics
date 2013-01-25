@@ -28,9 +28,12 @@ curses_mapping = {
 for c in curses_mapping:
     curses_mapping[c] = curses_mapping[c].upper()
 
+funcs = {}
+
 
 def key(*keys):
     def f(func):
+        funcs[func] = keys
         def wrapper(*args, **kwargs):
             func(*args, **kwargs)
 
@@ -45,6 +48,16 @@ def key(*keys):
         return wrapper
 
     return f
+
+
+def help_documentation():
+    """ returns a string with the definitions of the keys """
+    s = ''
+    for f, keys in funcs.items():
+        k = '  ' + ' '.join(keys)
+        tabs = int(3 - len(k)/8) * '\t'
+        s += '%s%s%s\n' % (k, tabs, f.__doc__ or f.__name__.replace('_', ' '))
+    return s
 
 
 def execute_event(app, key_chr):
@@ -106,9 +119,9 @@ def move_page_down(app):
 # gui modifications
 # ------------------------------------------------------------------------
 
-@key('<CR>', '<Enter>')
+@key('<CR>', '<Enter>', '<C-J>')
 def enter(app):
-    pass
+    player.play(app.states.playlist.selected.path)
 
 @key('s')
 def sort(app):
@@ -121,7 +134,8 @@ def random(app):
 @key('H', '<F3>')
 def help(app):
     """help - shows this"""
-    pass
+    app.states.show_help = not app.states.show_help
+    app.draw()
 
 @key('q')
 def quit(app):
@@ -135,7 +149,7 @@ def quit(app):
 def mute(app):
     player.mute()
 
-@key('<space>')  # space
+@key('<space>', 'p')  # space
 def pause(app):
     player.pause()
 
