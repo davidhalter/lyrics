@@ -83,6 +83,9 @@ def execute_event(app, key_chr):
     except KeyError:
         pass
 
+def start_playing(main_app):
+    player.play(state.playing.path, lambda: next(main_app))
+
 # ------------------------------------------------------------------------
 # movements
 # ------------------------------------------------------------------------
@@ -125,7 +128,9 @@ def move_page_down(main_app):
 
 @key('<CR>', '<Enter>', '<C-J>')
 def enter(main_app):
-    player.play(state.playlist.selected.path, lambda: next(main_app))
+    state.playing = state.playlist.selected
+    start_playing(main_app)
+    main_app.draw()
 
 @key('s')
 def sort(main_app):
@@ -153,13 +158,19 @@ def quit(main_app):
 def mute(main_app):
     player.mute()
 
-@key('<space>', 'p')  # space
+@key('<Space>')
 def pause(main_app):
     player.pause()
 
 @key('n')
 def next(main_app):
-    pass
+    p = state.playlist.next(state.playing)
+    if p is None and state.repeat:
+        p = state.playlist.songs[0]
+    if p:
+        state.playing = p
+        start_playing(main_app)
+    main_app.draw()
 
 @key('N')
 def previous(main_app):

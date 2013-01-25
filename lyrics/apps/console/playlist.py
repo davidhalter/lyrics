@@ -1,4 +1,5 @@
 import os
+import random
 
 import mutagen.mp3
 
@@ -124,6 +125,17 @@ class Playlist(StringList):
             return self.songs[i + 1]
         except IndexError:
             return None
+
+    def random(self, song=None):
+        if len(self.songs) == 1:
+            return self.songs[0]
+        elif len(self.songs) == 0:
+            return None
+        while True:
+            s = random.randint(0, len(self.songs) - 1)
+            if s != song:
+                break
+        return s
 
     @classmethod
     def from_path(cls, path):

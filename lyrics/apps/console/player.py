@@ -3,9 +3,9 @@ taken from pyradio and modified
 Playing is handled by mplayer
 """
 
+import os
 import subprocess
 import threading
-import os
 
 
 def popen_with_callback(on_exit=None, *args, **kwargs):
@@ -15,13 +15,16 @@ def popen_with_callback(on_exit=None, *args, **kwargs):
     def run_in_thread(on_exit, *args, **kwargs):
         global process
         process = subprocess.Popen(*args, **kwargs)
-        process.wait()
-        process = None
+        return_code = process.wait()
+        if return_code != 0:
+            # no normal finish, other threads are cleaning up.
+            return
         if on_exit is not None:
             return on_exit()
 
     thread = threading.Thread(target=run_in_thread, args=((on_exit,) + args),
                                                     kwargs=kwargs)
+    thread.daemon = True
     thread.start()
     # returns immediately after the thread starts
     return thread
@@ -61,7 +64,7 @@ def play(uri, callback_on_finish):
                                   stderr=subprocess.STDOUT)
     #thread.start_new_thread(updateStatus, ())
 
-def sendCommand(command):
+def send_command(command):
     """ send keystroke command to mplayer """
     if(process is not None):
         try:
@@ -71,25 +74,24 @@ def sendCommand(command):
 
 def mute():
     """ mute mplayer """
-    sendCommand("m")
+    send_command("m")
 
 def pause():
     """ pause streaming (if possible) """
-    sendCommand("p")
+    send_command("p")
 
 def close():
     """ exit pyradio (and kill mplayer instance) """
     global process
-    sendCommand("q")
+    send_command("q")
     if process is not None:
         os.kill(process.pid, 15)
-        process.wait()
     process = None
 
-def volumeUp():
+def volume_up():
     """ increase mplayer's volume """
-    sendCommand("*")
+    send_command("*")
 
-def volumeDown():
+def volume_down():
     """ decrease mplayer's volume """
-    sendCommand("/")
+    send_command("/")
