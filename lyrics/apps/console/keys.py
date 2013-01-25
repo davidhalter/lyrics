@@ -13,6 +13,8 @@ curses_mapping = {
     curses.KEY_PPAGE:       '<PageUp>',
     curses.KEY_DOWN:        '<Down>',
     curses.KEY_UP:          '<Up>',
+    curses.KEY_LEFT:        '<Left>',
+    curses.KEY_RIGHT:       '<Right>',
     curses.ascii.NL:        '<Enter>',
     curses.ascii.ESC:       '<ESC>',
     curses.ascii.SP:        '<SPACE>',
@@ -93,11 +95,11 @@ def move_down(main_app):
 def move_up(main_app):
     main_app.move_cursor(-1)
 
-@key('l')
+@key('l', '<Right>')
 def move_right(main_app):
     main_app.move_cursor(0, 1)
 
-@key('h')
+@key('h', '<Left>')
 def move_left(main_app):
     main_app.move_cursor(0, -1)
 
