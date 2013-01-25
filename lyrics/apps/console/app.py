@@ -115,8 +115,8 @@ class App(Window):
     def run(self):
         while True:
             try:
-                c = self.states.current_window.win_curses.getkey()
-                if c == 'KEY_RESIZE':
+                c = self.head.win_curses.getch()
+                if c == curses.KEY_RESIZE:
                     self.draw()
                     continue
                 keys.execute_event(self, c)
@@ -159,6 +159,7 @@ class Head(Window):
         self.win_curses.addstr(y, x, right_str, curses.color_pair(2))
         self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
+        self.win_curses.keypad(1)  # because it does the key handling
 
 
 class Footer(Window):
@@ -176,7 +177,6 @@ class StatusLine(Window):
 class Lyrics(Window):
     def init(self):
         self.win_curses.noutrefresh()
-        self.win_curses.keypad(1)
 
     def draw(self):
         self.win_curses.erase()
@@ -204,7 +204,6 @@ class Lyrics(Window):
 class SongList(Window):
     def init(self):
         self.win_curses.noutrefresh()
-        self.win_curses.keypad(1)
 
     def draw(self):
         self.win_curses.erase()

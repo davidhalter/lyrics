@@ -4,8 +4,26 @@ Playing is handled by mplayer
 """
 
 import subprocess
-import thread
+import threading
 import os
+
+
+def popen_with_callback(on_exit=None, *args, **kwargs):
+    """
+    Normal suprocess.Popen that calls 
+    """
+    def run_in_thread(on_exit, *args, **kwargs):
+        global process
+        process = subprocess.Popen(*args, **kwargs)
+        process.wait()
+        if on_exit is not None:
+            return on_exit()
+
+    thread = threading.Thread(target=run_in_thread, args=((on_exit,) + args),
+                                                    kwargs=kwargs)
+    thread.start()
+    # returns immediately after the thread starts
+    return thread
 
 
 process = None
@@ -24,7 +42,7 @@ def status():
 def is_playing():
     return bool(process)
 
-def play(uri):
+def play(uri, callback_on_finish):
     """ use mplayer to play a stream """
     global process
     close()
@@ -36,10 +54,10 @@ def play(uri):
     if is_play_list:
         opts.insert(2, '-playlist')
 
-    process = subprocess.Popen(opts, shell=False,
-                               stdout=subprocess.PIPE,
-                               stdin=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
+    process = popen_with_callback(callback_on_finish, opts, shell=False,
+                                  stdout=subprocess.PIPE,
+                                  stdin=subprocess.PIPE,
+                                  stderr=subprocess.STDOUT)
     #thread.start_new_thread(updateStatus, ())
 
 def sendCommand(command):

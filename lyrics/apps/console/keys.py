@@ -1,6 +1,6 @@
 """ keyboard events """
 
-from curses import ascii
+import curses.ascii
 
 import player
 import debug
@@ -8,22 +8,23 @@ import debug
 registered_events = {}
 
 curses_mapping = {
-    'KEY_NPAGE':        '<PageDown>',
-    'KEY_PPAGE':        '<PageUp>',
-    'KEY_DOWN':         '<Down>',
-    'KEY_UP':           '<Up>',
-    'KEY_F(1)':         '<F1>',
-    'KEY_F(2)':         '<F2>',
-    'KEY_F(3)':         '<F3>',
-    'KEY_F(4)':         '<F4>',
-    'KEY_F(5)':         '<F5>',
-    'KEY_F(6)':         '<F6>',
-    'KEY_F(7)':         '<F7>',
-    'KEY_F(8)':         '<F8>',
-    'KEY_F(9)':         '<F9>',
-    'KEY_F(10)':        '<F10>',
-    'KEY_F(11)':        '<F11>',
-    'KEY_F(12)':        '<F12>',
+    curses.KEY_NPAGE:       '<PageDown>',
+    curses.KEY_PPAGE:       '<PageUp>',
+    curses.KEY_DOWN:        '<Down>',
+    curses.KEY_UP:          '<Up>',
+    curses.ascii.NL:        '<Enter>',
+    curses.KEY_F1:          '<F1>',
+    curses.KEY_F2:          '<F2>',
+    curses.KEY_F3:          '<F3>',
+    curses.KEY_F4:          '<F4>',
+    curses.KEY_F5:          '<F5>',
+    curses.KEY_F6:          '<F6>',
+    curses.KEY_F7:          '<F7>',
+    curses.KEY_F8:          '<F8>',
+    curses.KEY_F9:          '<F9>',
+    curses.KEY_F10:         '<F10>',
+    curses.KEY_F11:         '<F11>',
+    curses.KEY_F12:         '<F12>',
 }
 for c in curses_mapping:
     curses_mapping[c] = curses_mapping[c].upper()
@@ -62,20 +63,18 @@ def help_documentation():
 
 def execute_event(app, key_chr):
     debug.debug('key pressed', repr(key_chr))
-    if len(key_chr) == 1:
-        # strip ctrl
-        key_chr = ascii.unctrl(key_chr)
-        if key_chr[0] == '^' and len(key_chr) == 2:
-            key_chr = '<C-%s>' % key_chr[1]
+
+    # strip ctrl
+    #key_chr = curses.ascii.ctrl(key_chr)
 
     try:
-        key_chr = curses_mapping[key_chr]
+        key_str = curses_mapping[key_chr]
     except KeyError:
-        pass
-    debug.debug('key pressed', repr(key_chr))
+        key_str = chr(key_chr)
+    debug.debug('key pressed', repr(key_chr), key_str)
 
     try:
-        return registered_events[key_chr](app)
+        return registered_events[key_str](app)
     except KeyError:
         pass
 
@@ -84,61 +83,61 @@ def execute_event(app, key_chr):
 # ------------------------------------------------------------------------
 
 @key('j', '<Down>')
-def move_down(app):
-    app.move_cursor(1)
+def move_down(main_app):
+    main_app.move_cursor(1)
 
 @key('k', '<Up>')
-def move_up(app):
-    app.move_cursor(-1)
+def move_up(main_app):
+    main_app.move_cursor(-1)
 
 @key('l')
-def move_right(app):
-    app.move_cursor(0, 1)
+def move_right(main_app):
+    main_app.move_cursor(0, 1)
 
 @key('h')
-def move_left(app):
-    app.move_cursor(0, -1)
+def move_left(main_app):
+    main_app.move_cursor(0, -1)
 
 @key('<C-U>', 'u')
-def move_half_page_up(app):
-    app.move_cursor(-int(app.states.current_window.height / 2))
+def move_half_page_up(main_app):
+    main_app.move_cursor(-int(main_app.states.current_window.height / 2))
 
 @key('<C-D>', 'd')
-def move_half_page_down(app):
-    app.move_cursor(int(app.states.current_window.height / 2))
+def move_half_page_down(main_app):
+    main_app.move_cursor(int(main_app.states.current_window.height / 2))
 
 @key('<C-B>', '<PageUp>')
-def move_page_up(app):
-    app.move_cursor(-app.states.current_window.height)
+def move_page_up(main_app):
+    main_app.move_cursor(-main_app.states.current_window.height)
 
 @key('<C-F>', '<PageDown>')
-def move_page_down(app):
-    app.move_cursor(app.states.current_window.height)
+def move_page_down(main_app):
+    main_app.move_cursor(main_app.states.current_window.height)
 
 # ------------------------------------------------------------------------
 # gui modifications
 # ------------------------------------------------------------------------
 
 @key('<CR>', '<Enter>', '<C-J>')
-def enter(app):
-    player.play(app.states.playlist.selected.path)
+def enter(main_app):
+    player.play(main_app.states.playlist.selected.path, lambda: next(main_app))
 
 @key('s')
-def sort(app):
+def sort(main_app):
     pass
 
 @key('r')
-def random(app):
+def random(main_app):
     pass
 
 @key('H', '<F3>')
-def help(app):
+def help(main_app):
     """help - shows this"""
-    app.states.show_help = not app.states.show_help
-    app.draw()
+    main_app.states.show_help = not main_app.states.show_help
+    main_app.draw()
 
 @key('q')
-def quit(app):
+def quit(main_app):
     raise KeyboardInterrupt()
 
 # ------------------------------------------------------------------------
@@ -146,17 +145,17 @@ def quit(app):
 # ------------------------------------------------------------------------
 
 @key('m')
-def mute(app):
+def mute(main_app):
     player.mute()
 
 @key('<space>', 'p')  # space
-def pause(app):
+def pause(main_app):
     player.pause()
 
 @key('n')
-def next(app):
+def next(main_app):
     pass
 
 @key('N')
-def previous(app):
+def previous(main_app):
     pass
