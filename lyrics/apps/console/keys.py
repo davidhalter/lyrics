@@ -142,7 +142,7 @@ def sort(main_app):
 @key('c')
 def random(main_app):
     """ random - by chance """
-    state.random = True
+    state.random = not state.random
 
 @key('r')
 def repeat(main_app):
@@ -176,7 +176,9 @@ def pause(main_app):
 
 @key('n')
 def next(main_app):
-    if state.random:
+    if state.repeat_solo and state.playing is not None:
+        p = state.playing
+    elif state.random:
         state.random_history_index += 1
         if state.random_history_index >= len(state.random_history):
             p = state.playlist.random(state.playing)

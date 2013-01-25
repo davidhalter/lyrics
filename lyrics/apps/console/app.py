@@ -27,6 +27,7 @@ class Window(object):
         pass
 
     def add_str(self, x, y, string, col=None):
+        x, y = self.clean_position(x, y)
         self.win_curses.addstr(y, x, string, col)
 
     def clean_position(self, x, y):
@@ -93,7 +94,7 @@ class App(Window):
         # cleanup
         player.close()
 
-    def create_window(self, cls, x, y , width, height):
+    def create_window(self, cls, x, y, width, height):
         x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
         return cls(x, y, width, height)
@@ -118,11 +119,8 @@ class App(Window):
 
 class Head(Window):
     def init(self):
-        info = " lyrics - press H for help."
-        self.win_curses.addstr(0, 0, info, curses.color_pair(4))
-        right_str = "test"
-        x, y = self.clean_position(- len(right_str) - 1, 0)
-        self.win_curses.addstr(y, x, right_str, curses.color_pair(2))
+        info = "lyrics - press H for help."
+        self.add_str(0, 0, info, curses.color_pair(4))
         self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
         self.win_curses.keypad(1)  # because it does the key handling
@@ -137,6 +135,10 @@ class Footer(Window):
 class StatusLine(Window):
     def init(self):
         self.win_curses.bkgd(' ', curses.color_pair(7))
+        r = 'repeat' if state.repeat else 'solo' if state.repeat_solo \
+                                                        else 'no-repeat'
+        status = "[%s, %s]" % (r, 'random' if state.random else 'no-random')
+        self.add_str(- len(status) - 1, 0, status, curses.color_pair(2))
         self.win_curses.noutrefresh()
 
 
