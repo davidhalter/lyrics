@@ -6,12 +6,25 @@ class States(object):
         self.split_screen = False
         self.playing = None
         self.current_window = None
+        self.keyboard_repeat = ''
+        self.command_list = []
 
+        self._last_command = ''
         self._random = False
         self._show_help = False
         self._show_lyrics = False
         self._repeat = True
         self._repeat_solo = False
+
+    @property
+    def last_command(self):
+        return self._last_command
+
+    @last_command.setter
+    def last_command(self, value):
+        self._last_command = value
+        if value:
+            self.command_list.append((self.last_command, self.keyboard_repeat))
 
     @property
     def random(self):

@@ -26,9 +26,23 @@ class Window(object):
     def draw(self):
         pass
 
-    def add_str(self, x, y, string, col=None):
+    def add_str(self, x, y, string, col=None, align='left'):
         x, y = self.clean_position(x, y)
+        if align == 'right':
+            x = max(0, x - len(string))
+
+        # check for strings that are being written in the wrong place.
+        if y >= self.height:
+            debug.debug('cannot write here: y=%s' % y)
+            return False
+        result = True
+        if x + len(string) >= self.width:
+            debug.debug('cannot write here: x=%s, len=%s' % (x, len(string)))
+            string = string[:self.width - x - 1]
+            result = False
+
         self.win_curses.addstr(y, x, string, col)
+        return result
 
     def clean_position(self, x, y):
         width, height = self.width, self.height
@@ -86,7 +100,7 @@ class App(Window):
                 if c == curses.KEY_RESIZE:
                     self.draw()
                     continue
-                keys.execute_event(self, c)
+                keys.event_handler(self, c)
             except KeyboardInterrupt:
                 # doesn't work with ctrl c: http://bugs.python.org/issue1687125
                 break
@@ -129,16 +143,25 @@ class Head(Window):
 class Footer(Window):
     def init(self):
         #self.win_curses.bkgd(' ', curses.color_pair(7))
+        last = state.keyboard_repeat + state.last_command
+        self.add_str(-5, 0, last, curses.color_pair(2), align='right')
         self.win_curses.noutrefresh()
 
 
 class StatusLine(Window):
     def init(self):
         self.win_curses.bkgd(' ', curses.color_pair(7))
+
         r = 'repeat' if state.repeat else 'solo' if state.repeat_solo \
                                                         else 'no-repeat'
         status = "[%s, %s]" % (r, 'random' if state.random else 'no-random')
-        self.add_str(- len(status) - 1, 0, status, curses.color_pair(2))
+        self.add_str(-1, 0, status, curses.color_pair(2), align='right')
+
+        if state.playing is not None:
+            length = self.width - 2 - len(status)
+            col = curses.color_pair(7)
+            self.add_str(0, 0, state.playing.format(length, album=True), col)
+
         self.win_curses.noutrefresh()
 
 
@@ -193,7 +216,7 @@ class SongList(Window):
             if song == state.playing or song == playlist.selected:
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
 
-            self.win_curses.addstr(i + 1, 1, song.format(length), col)
+            self.add_str(1, i + 1, song.format(length), col)
 
         self.win_curses.refresh()
 

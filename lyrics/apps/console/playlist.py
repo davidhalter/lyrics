@@ -17,7 +17,7 @@ class Song(object):
             return str(self.file_name)
         return "%s - %s" % (self.artist, self.song)
 
-    def format(self, max_len):
+    def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
         if self.artist is None:
             if len(self.file_name) > max_len:
@@ -35,7 +35,10 @@ class Song(object):
         if len(artist) > max_a_len:
             artist = artist[:max_a_len - 2] + '..'
 
-        return "%s - %s" % (song, artist)
+        result = "%s - %s" % (song, artist)
+        if album and len(result) < max_len - 5 and self.album:
+            result += ' [%s]' % str(self.album[:max_len - len(result) - 3])
+        return result
 
     @property
     def file_name(self):
@@ -58,12 +61,11 @@ class Song(object):
 
     @property
     def song(self):
-        song = self._information.get('TIT2', self.path)
-        return song
+        return self._information.get('TIT2', self.path)
 
     @property
     def album(self):
-        return self._information.get('TALB', None)
+        return str(self._information.get('TALB', None))
 
     def search(self, string):
         return string in self.album or string in self.song \

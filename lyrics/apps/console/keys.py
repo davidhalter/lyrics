@@ -1,6 +1,7 @@
 """ keyboard events """
 
 import os
+import re
 import curses.ascii
 
 import player
@@ -67,7 +68,7 @@ def help_documentation():
     return s
 
 
-def execute_event(app, key_chr):
+def event_handler(main_app, key_chr):
     debug.debug('key pressed', repr(key_chr))
 
     # strip ctrl
@@ -77,15 +78,36 @@ def execute_event(app, key_chr):
         key_str = curses_mapping[key_chr]
     except KeyError:
         key_str = chr(key_chr)
+        # TODO catch control keys
+
     debug.debug('key pressed', repr(key_chr), key_str)
 
-    try:
-        result = registered_events[key_str](app)
-    except KeyError:
-        result = None
+    if state.last_command:
+        # cleanup
+        state.last_command = ''
+        state.keyboard_repeat = ''
 
-    app.draw()
-    return result
+    if re.match('\d', key_str):
+        state.keyboard_repeat += key_str
+    else:
+        execute_key_command(main_app, key_str,
+                                    state.keyboard_repeat)
+
+        state.last_command = key_str
+
+    main_app.draw()
+
+
+def execute_key_command(main_app, command, repeat):
+    try:
+        if repeat:
+            count = int(repeat)
+        else:
+            count = 1
+        for i in range(count):
+            registered_events[command](main_app)
+    except KeyError:
+        pass
 
 def start_playing(*args, **kwargs):
     player.play(state.playing.path, lambda: next(*args, **kwargs))
@@ -126,11 +148,20 @@ def move_page_up(main_app):
 def move_page_down(main_app):
     main_app.move_cursor(state.current_window.height)
 
+@key('.')
+def repeat_last_action(main_app):
+    for command, repeat in reversed(state.command_list):
+        if command != '.':
+            break
+    if state.command_list:
+        execute_key_command(main_app, command, repeat)
+        main_app.move_cursor(0, -1)
+
 # ------------------------------------------------------------------------
 # gui modifications
 # ------------------------------------------------------------------------
 
-@key('<CR>', '<Enter>', '<C-J>')
+@key('<CR>', '<Enter>')
 def enter(main_app):
     state.playing = state.playlist.selected
     start_playing(main_app)
@@ -162,9 +193,21 @@ def help(main_app):
 def quit(main_app):
     raise KeyboardInterrupt()
 
+@key('/')
+def search(main_app):
+    raise
+
 # ------------------------------------------------------------------------
 # player keys
 # ------------------------------------------------------------------------
+
+@key('+', '<C-a>')
+def volume_up(main_app):
+    player.volume_up()
+
+@key('-', '<C-x>')
+def volume_down(main_app):
+    player.volume_down()
 
 @key('m')
 def mute(main_app):
