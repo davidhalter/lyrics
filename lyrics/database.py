@@ -1,6 +1,7 @@
 import sqlite3
 
 import settings
+import debug
 
 def load(artist, song, album):
     if settings.use_database:
@@ -85,7 +86,10 @@ class ID3Cache(object):
     def load(self, path):
         self.cursor.execute(self._select, (path,))
         row = self.cursor.fetchone()
-        return None if row is None else dict(zip(row.keys(), row))
+        if row is None:
+            return None
+        debug.debug('id3 db song', row)
+        return dict(zip(row.keys(), row))
 
 
 _LyricsDb = _LyricsDb()

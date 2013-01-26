@@ -1,7 +1,7 @@
 import os
 import random
 
-import debug
+from lyrics import debug
 from lyrics import id3
 from lyrics._compatibility import unicode
 

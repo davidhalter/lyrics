@@ -1,7 +1,7 @@
 import os
 import logging
 
-from lyrics import settings
+import settings
 
 use_debugging = False
 f_name = os.path.join(settings.config_directory, 'lyrics.log')

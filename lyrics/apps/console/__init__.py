@@ -23,7 +23,7 @@ d = os.path.dirname
 sys.path.insert(0, d(d(d(d(os.path.abspath(__file__))))))
 
 import lyrics
-import debug
+from lyrics import debug
 import app
 
 

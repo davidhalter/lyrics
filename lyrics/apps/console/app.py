@@ -5,7 +5,7 @@ import curses
 import lyrics
 import playlist
 import keys
-import debug
+from lyrics import debug
 import player
 
 from states import state

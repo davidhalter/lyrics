@@ -5,7 +5,7 @@ import re
 import curses.ascii
 
 import player
-import debug
+from lyrics import debug
 from states import state
 
 curses_mapping = {
