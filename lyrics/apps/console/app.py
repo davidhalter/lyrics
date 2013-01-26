@@ -2,8 +2,6 @@
 
 import curses
 
-import lyrics
-import playlist
 import keys
 from lyrics import debug
 import player
@@ -88,6 +86,8 @@ class App(Window):
 
         self.win_curses.nodelay(0)
         self.draw()
+
+        keys._after_movement()
 
         self.run()
 

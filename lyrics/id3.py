@@ -72,13 +72,12 @@ class Song(object):
     def genre(self):
         return self._get_id3('TCON', 'genre')
 
-    @property
     def get_lyrics_thread(self, on_finish_callback):
         def run_in_thread():
             lyr = lyrics.get(self.artist, self.song, self.album)
             self.lyrics = lyr
             if on_finish_callback is not None:
-                on_finish_callback(lyr)
+                on_finish_callback(self, lyr)
 
 
         thread = threading.Thread(target=run_in_thread)

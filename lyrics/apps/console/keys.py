@@ -134,7 +134,14 @@ def _start_playing():
 # ------------------------------------------------------------------------
 
 def _after_movement():
-    pass
+    def got_lyrics(_song, lyrics):
+        """:param _song: not a playlist.song, but lyrics.id3.song"""
+        state.lyrics
+        if state.playlist.selected._song == _song:
+            state.lyrics = _song
+        app.main_app.draw()
+
+    state.playlist.selected.get_lyrics_thread(got_lyrics)
 
 def _move_cursor(x=0, y=0):
     state.current_window.move_cursor(x, y)
@@ -226,7 +233,7 @@ def cancel_operation():
 # player keys
 # ------------------------------------------------------------------------
 def _switch_song():
-    pass
+    _after_movement()
 
 @key('+', '<C-a>')
 def volume_up():
