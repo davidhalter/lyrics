@@ -280,6 +280,11 @@ def previous(main_app):
 # search
 # ------------------------------------------------------------------------
 
+@key('x')
+def clear_search(main_app):
+    if state.playlist.parent is not None:
+        state.playlist = state.playlist.parent
+
 @key('/')
 def search(main_app):
     state.search_mode = True
@@ -287,6 +292,8 @@ def search(main_app):
     state.search_list.append('')
     state.search_index = len(state.search_list) - 1
     state.search_cursor = 0
+    state.playlist = state.playlist.search('')
+    debug.debug('base', state.playlist, state.playlist.search('').parent)
     _search_update()
 
 def _search_write(char):
@@ -299,16 +306,19 @@ def _search_write(char):
 def _search_update():
     playlist = state.playlist.parent
     for word in re.split('[- _]*', state.search):
-        playlist.search(word)
+        playlist = playlist.search(word)
     state.playlist = playlist
 
 @key('<BS>', mode='search')
 def search_backspace(main_app):
     if state.search:
         state.search = state.search[:-1]
+        state.search = state.search[:state.search_cursor - 1] \
+                        + state.search[state.search_cursor:]
+        state.search_cursor -= 1
+        _search_update()
     else:
         search_cancel(main_app)
-    _search_update()
 
 @key('<Enter>', mode='search')
 def search_enter(main_app):
@@ -324,6 +334,7 @@ def search_cancel(main_app):
     state.search_mode = False
     state.playlist = state.playlist.parent
     #debug.debug('search_list', state.search_list)
+    clear_search(main_app)
 
 @key('<Left>', mode='search')
 def search_left(main_app):

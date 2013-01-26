@@ -42,8 +42,9 @@ class Song(object):
         return result
 
     def search(self, string):
-        return string in self.album or string in self.song \
-                    or string in self.artist
+        return string.lower() in self.album.lower() \
+                or string.lower() in self.song.lower() \
+                or string.lower() in self.artist.lower()
 
 
 class StringList(object):
@@ -70,7 +71,8 @@ class Playlist(StringList):
         super(Playlist, self).__init__(songs)
         self.songs = songs
         self.selected = selected or self.songs[0] if self.songs else None
-        self.parent = parent or self
+        self.parent = parent
+        self.sort()
 
     def __len__(self):
         return len(self.songs)
@@ -83,8 +85,8 @@ class Playlist(StringList):
         self.songs = sorted(self.songs, key=sort_func)
 
     def search(self, string):
-        #return Playlist([s for s in self.songs if s.search(string)], self)
-        return Playlist([s for s in self.songs if string in s.path], self)
+        return Playlist([s for s in self.songs if s.search(string)],
+                                selected=self.selected, parent=self)
 
     def _set_index(self):
         try:
@@ -134,7 +136,7 @@ class Playlist(StringList):
     @classmethod
     def from_path(cls, path):
         path = path.decode('UTF-8')
-        path = os.path.expandvars(os.path.expanduser(path))
+        path = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
         debug.debug('load from', path)
         if path is None:
             return cls.from_library()
