@@ -65,8 +65,8 @@ class _LyricsDb(object):
     @_sqlite_threadsafe
     def load(self, *args):
         connection, cursor = self.get_cursor()
-        self.cursor.execute(self._select, args)
-        row = self.cursor.fetchone()
+        cursor.execute(self._select, args)
+        row = cursor.fetchone()
         return row[0] if row is not None else None
 
 

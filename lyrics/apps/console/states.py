@@ -88,6 +88,8 @@ class States(object):
         self._lyrics = value
         if value:
             self.split_screen = True
+        elif not self.show_help:
+            self.split_screen = False
 
 
 state = States()

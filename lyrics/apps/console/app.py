@@ -187,7 +187,7 @@ class Lyrics(Window):
             txt = "Help\n" + keys.help_documentation()
             txt += "\nWritten by David Halter -> http://jedidjah.ch"
         else:
-            txt = ""
+            txt = state.lyrics.replace('\n\n', '\n')
 
         for i, line in enumerate(txt.splitlines()):
             self.add_str(1, i + 1, line, col)

@@ -136,9 +136,8 @@ def _start_playing():
 def _after_movement():
     def got_lyrics(_song, lyrics):
         """:param _song: not a playlist.song, but lyrics.id3.song"""
-        state.lyrics
         if state.playlist.selected._song == _song:
-            state.lyrics = _song
+            state.lyrics = lyrics
         app.main_app.draw()
 
     state.playlist.selected.get_lyrics_thread(got_lyrics)
@@ -233,6 +232,7 @@ def cancel_operation():
 # player keys
 # ------------------------------------------------------------------------
 def _switch_song():
+    state.playlist.selected = state.playing
     _after_movement()
 
 @key('+', '<C-a>')
