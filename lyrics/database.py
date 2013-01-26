@@ -88,8 +88,9 @@ class ID3Cache(object):
         row = self.cursor.fetchone()
         if row is None:
             return None
+        row = dict(zip(row.keys(), row))
         debug.debug('id3 db song', row)
-        return dict(zip(row.keys(), row))
+        return row
 
 
 _LyricsDb = _LyricsDb()

@@ -20,6 +20,7 @@ class Song(object):
 
     def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
+        debug.debug('test', self.artist)
         if not self.artist:
             if len(self.file_name) > max_len:
                 return self.file_name[:max_len - 2]  + '..'

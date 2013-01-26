@@ -36,29 +36,36 @@ class Song(object):
                         database.ID3Cache.save(self.export())
         return self.__information
 
+    def _get_id3(self, *keys):
+        for k in keys:
+            result = self._information.get(k, None)
+            if result is not None:
+                break
+        return unicode(result or '')
+
     @property
     def artist(self):
-        return unicode(self._information.get('TPE1', ''))
+        return self._get_id3('TPE1', 'artist')
 
     @property
     def song(self):
-        return unicode(self._information.get('TIT2', self.path))
+        return self._get_id3('TIT2', 'song')
 
     @property
     def album(self):
-        return unicode(self._information.get('TALB', ''))
+        return self._get_id3('TALB', 'album')
 
     @property
     def year(self):
-        return unicode(self._information.get('TDRC', ''))
+        return self._get_id3('TDRC', 'year')
 
     @property
     def track(self):
-        return unicode(self._information.get('TRCK', ''))
+        return self._get_id3('TRCK', 'track')
 
     @property
     def genre(self):
-        return unicode(self._information.get('TCON', ''))
+        return self._get_id3('TCON', 'genre')
 
     def export(self):
         """ export all useful id3 values """
