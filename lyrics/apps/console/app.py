@@ -65,11 +65,9 @@ class Window(object):
 
 
 class App(Window):
-    def __init__(self, path):
-        state.playlist = playlist.Playlist.from_path(path)
-        song = state.playlist[-1]
-        print song
-        exit()
+    def __init__(self):
+        # need to override the default __init__
+        pass
 
     def start(self):
         curses.wrapper(self.setup)  # the infinite loop
@@ -100,7 +98,7 @@ class App(Window):
                 if c == curses.KEY_RESIZE:
                     self.draw()
                     continue
-                keys.event_handler(self, c)
+                keys.event_handler(c)
             except KeyboardInterrupt:
                 # doesn't work with ctrl c: http://bugs.python.org/issue1687125
                 break
@@ -200,9 +198,6 @@ class Lyrics(Window):
         self.win_curses.bkgd(' ')
         self.win_curses.refresh()
 
-    def _show_lyrics(self):
-        print(lyrics.get('Mumford & Sons', 'Sigh no more'))
-
 
 class SongList(Window):
     def init(self):
@@ -234,4 +229,5 @@ class SongList(Window):
     def move_cursor(self, y, x=0):
         # later we could also check for other lists here.
         state.playlist.move_selected(y)
-        self.draw()
+
+main_app = App()

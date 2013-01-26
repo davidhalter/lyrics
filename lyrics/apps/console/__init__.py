@@ -23,8 +23,10 @@ d = os.path.dirname
 sys.path.insert(0, d(d(d(d(os.path.abspath(__file__))))))
 
 import lyrics
+from states import state
+import playlist
 from lyrics import debug
-import app
+from app import main_app
 
 
 def start():
@@ -32,8 +34,8 @@ def start():
     debug.use_debugging = arguments['--debug']
     debug.debug('started with', arguments)
 
-    a = app.App(arguments['<path>'])
-    a.start()
+    state.playlist = playlist.Playlist.from_path(arguments['<path>'])
+    main_app.start()
 
 if __name__ == '__main__':
     start()

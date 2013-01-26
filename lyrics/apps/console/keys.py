@@ -8,6 +8,8 @@ import player
 from lyrics import debug
 from states import state
 
+import app
+
 curses_mapping = {
     curses.KEY_NPAGE:       '<PageDown>',
     curses.KEY_PPAGE:       '<PageUp>',
@@ -70,7 +72,7 @@ def help_documentation():
     return s
 
 
-def event_handler(main_app, key_chr):
+def event_handler(key_chr):
     debug.debug('key pressed', repr(key_chr))
 
     # strip ctrl
@@ -92,7 +94,7 @@ def event_handler(main_app, key_chr):
             _search_write(key_str)
         else:
             try:
-                registered_events['search'][key_str](main_app)
+                registered_events['search'][key_str]()
             except KeyError:
                 pass
 
@@ -105,134 +107,140 @@ def event_handler(main_app, key_chr):
         if re.match('\d', key_str):
             state.keyboard_repeat += key_str
         else:
-            execute_key_command(main_app, key_str, state.keyboard_repeat)
+            execute_key_command(key_str, state.keyboard_repeat)
 
             state.last_command = key_str
 
-    main_app.draw()
+    app.main_app.draw()
 
 
-def execute_key_command(main_app, command, repeat):
+def execute_key_command(command, repeat):
     try:
         if repeat:
             count = int(repeat)
         else:
             count = 1
         for i in range(count):
-            registered_events['normal'][command](main_app)
+            registered_events['normal'][command]()
     except KeyError:
         pass
 
-def start_playing(*args, **kwargs):
-    player.play(state.playing.path, lambda: next(*args, **kwargs))
+def start_playing():
+    player.play(state.playing.path, lambda: next())
 
 # ------------------------------------------------------------------------
 # movements
 # ------------------------------------------------------------------------
 
+def _movement():
+    pass
+
+
 @key('j', '<Down>')
-def move_down(main_app):
-    main_app.move_cursor(1)
+def move_down():
+    app.main_app.move_cursor(1)
 
 @key('k', '<Up>')
-def move_up(main_app):
-    main_app.move_cursor(-1)
+def move_up():
+    app.main_app.move_cursor(-1)
 
 @key('l', '<Right>')
-def move_right(main_app):
-    main_app.move_cursor(0, 1)
+def move_right():
+    app.main_app.move_cursor(0, 1)
 
 @key('h', '<Left>')
-def move_left(main_app):
-    main_app.move_cursor(0, -1)
+def move_left():
+    app.main_app.move_cursor(0, -1)
 
 @key('<C-U>', 'u')
-def move_half_page_up(main_app):
-    main_app.move_cursor(-int(state.current_window.height / 2))
+def move_half_page_up():
+    app.main_app.move_cursor(-int(state.current_window.height / 2))
 
 @key('<C-D>', 'd')
-def move_half_page_down(main_app):
-    main_app.move_cursor(int(state.current_window.height / 2))
+def move_half_page_down():
+    app.main_app.move_cursor(int(state.current_window.height / 2))
 
 @key('<C-B>', '<PageUp>')
-def move_page_up(main_app):
-    main_app.move_cursor(-state.current_window.height)
+def move_page_up():
+    app.main_app.move_cursor(-state.current_window.height)
 
 @key('<C-F>', '<PageDown>')
-def move_page_down(main_app):
-    main_app.move_cursor(state.current_window.height)
+def move_page_down():
+    app.main_app.move_cursor(state.current_window.height)
 
 @key('.')
-def repeat_last_action(main_app):
+def repeat_last_action():
     for command, repeat in reversed(state.command_list):
         if command != '.':
             break
     if state.command_list:
-        execute_key_command(main_app, command, repeat)
-        main_app.move_cursor(0, -1)
+        execute_key_command(command, repeat)
+        app.main_app.move_cursor(0, -1)
 
 # ------------------------------------------------------------------------
 # gui modifications
 # ------------------------------------------------------------------------
 
 @key('<CR>', '<Enter>')
-def enter(main_app):
+def enter():
     state.playing = state.playlist.selected
-    start_playing(main_app)
+    start_playing()
 
 @key('s')
-def sort(main_app):
+def sort():
     pass
 
 @key('c')
-def random(main_app):
+def random():
     """ random - by chance """
     state.random = not state.random
 
 @key('r')
-def repeat(main_app):
+def repeat():
     state.repeat = not state.repeat
 
 @key('R')
-def repeat_solo(main_app):
+def repeat_solo():
     state.repeat_solo = not state.repeat_solo
 
 @key('H', '<F3>')
-def help(main_app):
+def help():
     """help - shows this"""
     state.show_help = not state.show_help
 
 @key('q')
-def quit(main_app):
+def quit():
     raise KeyboardInterrupt()
 
 @key('<Esc>')
-def cancel_operation(main_app):
+def cancel_operation():
     state.show_help = False
 
 
 # ------------------------------------------------------------------------
 # player keys
 # ------------------------------------------------------------------------
+def _switch_song():
+    pass
 
 @key('+', '<C-a>')
-def volume_up(main_app):
+def volume_up():
     player.volume_up()
 
 @key('-', '<C-x>')
-def volume_down(main_app):
+def volume_down():
     player.volume_down()
 
 @key('m')
-def mute(main_app):
+def mute():
     player.mute()
 
 @key('<Space>')
-def pause(main_app):
+def pause():
     player.pause()
 
 @key('n')
-def next(main_app):
+def next():
     if state.repeat_solo and state.playing is not None:
         p = state.playing
     elif state.random:
@@ -253,11 +261,12 @@ def next(main_app):
             p = state.playlist[0]
     if p:
         state.playing = p
-        start_playing(main_app)
-    main_app.draw()
+        start_playing()
+    _switch_song()
+    app.main_app.draw()
 
 @key('N')
-def previous(main_app):
+def previous():
     if state.random:
         if state.random_history_index <= 0:
             return
@@ -275,19 +284,20 @@ def previous(main_app):
             p = state.playlist[0]
     if p is not None:
         state.playing = p
-        start_playing(main_app)
+        start_playing()
+    _switch_song()
 
 # ------------------------------------------------------------------------
 # search
 # ------------------------------------------------------------------------
 
 @key('x')
-def clear_search(main_app):
+def clear_search():
     if state.playlist.parent is not None:
         state.playlist = state.playlist.parent
 
 @key('/')
-def search(main_app):
+def search():
     state.search_mode = True
     state.search = ''
     state.search_list.append('')
@@ -309,9 +319,10 @@ def _search_update():
     for word in re.split('[- _]*', state.search):
         playlist = playlist.search(word)
     state.playlist = playlist
+    _movement()
 
 @key('<BS>', mode='search')
-def search_backspace(main_app):
+def search_backspace():
     if state.search:
         state.search = state.search[:-1]
         state.search = state.search[:state.search_cursor - 1] \
@@ -319,15 +330,15 @@ def search_backspace(main_app):
         state.search_cursor -= 1
         _search_update()
     else:
-        search_cancel(main_app)
+        search_cancel()
 
 @key('<Enter>', mode='search')
-def search_enter(main_app):
+def search_enter():
     state.search_mode = False
     _search_update()
 
 @key('<Esc>', mode='search')
-def search_cancel(main_app):
+def search_cancel():
     if state.search:
         state.search_list[state.search_index] = state.search
     else:
@@ -335,18 +346,18 @@ def search_cancel(main_app):
     state.search_mode = False
     state.playlist = state.playlist.parent
     #debug.debug('search_list', state.search_list)
-    clear_search(main_app)
+    clear_search()
 
 @key('<Left>', mode='search')
-def search_left(main_app):
+def search_left():
     state.search_cursor = max(state.search_cursor - 1, 0)
 
 @key('<Right>', mode='search')
-def search_right(main_app):
+def search_right():
     state.search_cursor = min(state.search_cursor + 1, len(state.search))
 
 @key('<Down>', mode='search')
-def search_down(main_app):
+def search_down():
     state.search_list[state.search_index] = state.search
     state.search_index = min(state.search_index + 1,
                              len(state.search_list) - 1)
@@ -355,7 +366,7 @@ def search_down(main_app):
     _search_update()
 
 @key('<Up>', mode='search')
-def search_up(main_app):
+def search_up():
     state.search_list[state.search_index] = state.search
     state.search_index = max(state.search_index - 1, 0)
     state.search = state.search_list[state.search_index]

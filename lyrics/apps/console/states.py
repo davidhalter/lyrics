@@ -19,7 +19,7 @@ class States(object):
         self._last_command = ''
         self._random = False
         self._show_help = False
-        self._show_lyrics = False
+        self._lyrics = False
         self._repeat = True
         self._repeat_solo = False
 
@@ -80,12 +80,12 @@ class States(object):
             self.split_screen = self.show_lyrics
 
     @property
-    def show_lyrics(self):
-        return self._show_lyrics
+    def lyrics(self):
+        return self._lyrics
 
-    @show_lyrics.setter
-    def show_lyrics(self, value):
-        self._show_lyrics = value
+    @lyrics.setter
+    def lyrics(self, value):
+        self._lyrics = value
         if value:
             self.split_screen = True
 
