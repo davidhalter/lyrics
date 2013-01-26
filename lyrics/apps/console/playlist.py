@@ -1,25 +1,25 @@
 import os
 import random
 
-import mutagen.mp3
-
 import debug
+from lyrics import id3
 
 
 class Song(object):
     def __init__(self, path):
-        self.path = path
-        self.__information = None
-        self.broken = False
+        self._song = id3.Song(path, use_cache=True)
+
+    def __getattr__(self, name):
+        return getattr(self._song, name)
 
     def __repr__(self):
-        if self.artist is None:
+        if not self.artist:
             return str(self.file_name)
         return "%s - %s" % (self.artist, self.song)
 
     def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
-        if self.artist is None:
+        if not self.artist:
             if len(self.file_name) > max_len:
                 return self.file_name[:max_len - 2]  + '..'
             else:
@@ -39,33 +39,6 @@ class Song(object):
         if album and len(result) < max_len - 5 and self.album:
             result += ' [%s]' % str(self.album[:max_len - len(result) - 3])
         return result
-
-    @property
-    def file_name(self):
-        return os.path.basename(self.path)
-
-    @property
-    def _information(self):
-        if self.__information is None:
-            debug.debug('mutagen before', self.path)
-            try:
-                self.__information = mutagen.File(self.path)
-            except mutagen.mp3.HeaderNotFoundError:
-                self.__information = {}
-                self.broken = True
-        return self.__information
-
-    @property
-    def artist(self):
-        return self._information.get('TPE1', None)
-
-    @property
-    def song(self):
-        return self._information.get('TIT2', self.path)
-
-    @property
-    def album(self):
-        return str(self._information.get('TALB', None))
 
     def search(self, string):
         return string in self.album or string in self.song \
