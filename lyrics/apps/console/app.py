@@ -111,9 +111,6 @@ class App(Window):
         width, height = self.clean_position(width, height)
         return cls(x, y, width, height)
 
-    def move_cursor(self, y, x=0):
-        return state.current_window.move_cursor(y, x)
-
     def draw(self):
         # setup windows
         self.head = self.create_window(Head, 0, 0, None, 1)
@@ -226,7 +223,7 @@ class SongList(Window):
 
         self.win_curses.refresh()
 
-    def move_cursor(self, y, x=0):
+    def move_cursor(self, x, y):
         # later we could also check for other lists here.
         state.playlist.move_selected(y)
 

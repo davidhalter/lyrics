@@ -125,48 +125,52 @@ def execute_key_command(command, repeat):
     except KeyError:
         pass
 
-def start_playing():
+def _start_playing():
     player.play(state.playing.path, lambda: next())
+    _after_movement()
 
 # ------------------------------------------------------------------------
 # movements
 # ------------------------------------------------------------------------
 
-def _movement():
+def _after_movement():
     pass
 
+def _move_cursor(x=0, y=0):
+    state.current_window.move_cursor(x, y)
+    _after_movement()
 
 @key('j', '<Down>')
 def move_down():
-    app.main_app.move_cursor(1)
+    _move_cursor(y=1)
 
 @key('k', '<Up>')
 def move_up():
-    app.main_app.move_cursor(-1)
+    _move_cursor(y=-1)
 
 @key('l', '<Right>')
 def move_right():
-    app.main_app.move_cursor(0, 1)
+    _move_cursor(x=1)
 
 @key('h', '<Left>')
 def move_left():
-    app.main_app.move_cursor(0, -1)
+    _move_cursor(x=-1)
 
 @key('<C-U>', 'u')
 def move_half_page_up():
-    app.main_app.move_cursor(-int(state.current_window.height / 2))
+    _move_cursor(y=-int(state.current_window.height / 2))
 
 @key('<C-D>', 'd')
 def move_half_page_down():
-    app.main_app.move_cursor(int(state.current_window.height / 2))
+    _move_cursor(y=int(state.current_window.height / 2))
 
 @key('<C-B>', '<PageUp>')
 def move_page_up():
-    app.main_app.move_cursor(-state.current_window.height)
+    _move_cursor(y=-state.current_window.height)
 
 @key('<C-F>', '<PageDown>')
 def move_page_down():
-    app.main_app.move_cursor(state.current_window.height)
+    _move_cursor(y=state.current_window.height)
 
 @key('.')
 def repeat_last_action():
@@ -175,7 +179,6 @@ def repeat_last_action():
             break
     if state.command_list:
         execute_key_command(command, repeat)
-        app.main_app.move_cursor(0, -1)
 
 # ------------------------------------------------------------------------
 # gui modifications
@@ -184,23 +187,25 @@ def repeat_last_action():
 @key('<CR>', '<Enter>')
 def enter():
     state.playing = state.playlist.selected
-    start_playing()
+    _start_playing()
 
 @key('s')
 def sort():
     pass
-
-@key('c')
-def random():
-    """ random - by chance """
-    state.random = not state.random
+    _after_movement()
 
 @key('r')
+def random():
+    state.random = not state.random
+
+@key('i')
 def repeat():
+    """repeat = iterate"""
     state.repeat = not state.repeat
 
-@key('R')
+@key('I')
 def repeat_solo():
+    """repeat solo - iterate solo"""
     state.repeat_solo = not state.repeat_solo
 
 @key('H', '<F3>')
@@ -261,7 +266,7 @@ def next():
             p = state.playlist[0]
     if p:
         state.playing = p
-        start_playing()
+        _start_playing()
     _switch_song()
     app.main_app.draw()
 
@@ -284,7 +289,7 @@ def previous():
             p = state.playlist[0]
     if p is not None:
         state.playing = p
-        start_playing()
+        _start_playing()
     _switch_song()
 
 # ------------------------------------------------------------------------
@@ -319,7 +324,7 @@ def _search_update():
     for word in re.split('[- _]*', state.search):
         playlist = playlist.search(word)
     state.playlist = playlist
-    _movement()
+    _after_movement()
 
 @key('<BS>', mode='search')
 def search_backspace():
