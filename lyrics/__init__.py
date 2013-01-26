@@ -14,7 +14,7 @@ import id3
 
 def get(artist, song, album=None):
     """Fetch the lyrics as text."""
-    info = artist, song, album
+    info = artist, song, album or ''
     return database.load(*info) or fetcher.fetch(*info)
 
 def from_file(path, use_id3_cache=False):

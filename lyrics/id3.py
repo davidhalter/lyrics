@@ -1,7 +1,9 @@
 import os
 import mutagen.mp3
+import threading
 
-import database
+import lyrics
+from lyrics import database
 from _compatibility import unicode
 
 class Song(object):
@@ -68,6 +70,20 @@ class Song(object):
     @property
     def genre(self):
         return self._get_id3('TCON', 'genre')
+
+    @property
+    def get_lyrics_thread(self, on_finish_callback):
+        def run_in_thread():
+            lyr = lyrics.get(self.artist, self.song, self.album)
+            if on_finish_callback is not None:
+                on_finish_callback(lyr)
+
+
+        thread = threading.Thread(target=run_in_thread)
+        thread.daemon = True
+        thread.start()
+        # returns immediately after the thread starts
+        return thread
 
     def export(self):
         """ export all useful id3 values """

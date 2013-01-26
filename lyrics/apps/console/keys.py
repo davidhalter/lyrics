@@ -254,6 +254,7 @@ def next(main_app):
     if p:
         state.playing = p
         start_playing(main_app)
+    main_app.draw()
 
 @key('N')
 def previous(main_app):

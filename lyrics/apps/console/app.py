@@ -67,6 +67,9 @@ class Window(object):
 class App(Window):
     def __init__(self, path):
         state.playlist = playlist.Playlist.from_path(path)
+        song = state.playlist[-1]
+        print song
+        exit()
 
     def start(self):
         curses.wrapper(self.setup)  # the infinite loop
