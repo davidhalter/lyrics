@@ -20,7 +20,6 @@ class Song(object):
 
     def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
-        debug.debug('test', self.artist)
         if not self.artist:
             if len(self.file_name) > max_len:
                 return self.file_name[:max_len - 2]  + '..'
@@ -80,7 +79,8 @@ class Playlist(StringList):
         return self.songs[key]
 
     def sort(self):
-        self.songs = sorted(self.songs)
+        sort_func = lambda song: (song.artist, song.song)
+        self.songs = sorted(self.songs, key=sort_func)
 
     def search(self, string):
         #return Playlist([s for s in self.songs if s.search(string)], self)

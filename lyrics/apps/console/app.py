@@ -41,7 +41,8 @@ class Window(object):
             string = string[:self.width - x - 1]
             result = False
 
-        self.win_curses.addstr(y, x, string, col)
+        string = string.replace('\0', '')
+        self.win_curses.addstr(y, x, string.encode('UTF-8'), col)
         return result
 
     def clean_position(self, x, y):
@@ -66,6 +67,7 @@ class Window(object):
 class App(Window):
     def __init__(self, path):
         state.playlist = playlist.Playlist.from_path(path)
+        state.playlist.sort()
 
     def start(self):
         curses.wrapper(self.setup)  # the infinite loop

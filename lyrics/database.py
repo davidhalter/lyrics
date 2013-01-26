@@ -80,6 +80,7 @@ class ID3Cache(object):
         return self._cursor
 
     def save(self, dct):
+        debug.debug('save id3 db song', dct)
         self.cursor.execute(self._insert, dct)
         self._connection.commit()
 
@@ -89,7 +90,7 @@ class ID3Cache(object):
         if row is None:
             return None
         row = dict(zip(row.keys(), row))
-        debug.debug('id3 db song', row)
+        #debug.debug('id3 db song', row)
         return row
 
 

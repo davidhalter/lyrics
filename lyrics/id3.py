@@ -32,11 +32,13 @@ class Song(object):
                     self.__id3 = {}
                     self.broken = True
                 else:
-                    if self.use_cache:
+                    if self.use_cache and self.__id3 is not None:
                         database.ID3Cache.save(self.export())
         return self.__id3
 
     def _get_id3(self, *keys):
+        if self._id3 is None:
+            return ''
         for k in keys:
             result = self._id3.get(k, None)
             if result is not None:
