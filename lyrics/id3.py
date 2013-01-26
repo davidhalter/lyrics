@@ -8,7 +8,7 @@ class Song(object):
     def __init__(self, path, use_cache=False):
         self.path = path
         self.use_cache = use_cache
-        self.__information = None
+        self.__id3 = None
         self.broken = False
 
     @property
@@ -20,25 +20,25 @@ class Song(object):
         return self.file_name.rsplit(os.extsep, 1)
 
     @property
-    def _information(self):
-        if self.__information is None:
+    def _id3(self):
+        if self.__id3 is None:
             if self.use_cache:
-                self.__information = database.ID3Cache.load(self.path)
+                self.__id3 = database.ID3Cache.load(self.path)
 
-            if self.__information is None:
+            if self.__id3 is None:
                 try:
-                    self.__information = mutagen.File(self.path)
+                    self.__id3 = mutagen.File(self.path)
                 except mutagen.mp3.HeaderNotFoundError:
-                    self.__information = {}
+                    self.__id3 = {}
                     self.broken = True
                 else:
                     if self.use_cache:
                         database.ID3Cache.save(self.export())
-        return self.__information
+        return self.__id3
 
     def _get_id3(self, *keys):
         for k in keys:
-            result = self._information.get(k, None)
+            result = self._id3.get(k, None)
             if result is not None:
                 break
         return unicode(result or '')
