@@ -3,6 +3,7 @@ import random
 
 import debug
 from lyrics import id3
+from lyrics._compatibility import unicode
 
 
 class Song(object):
@@ -25,13 +26,13 @@ class Song(object):
             else:
                 return self.file_name
 
-        song = str(self.song)
+        song = unicode(self.song)
         new_len = int(0.5 * max_len)
         if len(song) > new_len:
             song = song[:new_len - 2] + '..'
 
         max_a_len = max_len - len(song) - 3
-        artist = str(self.artist)
+        artist = unicode(self.artist)
         if len(artist) > max_a_len:
             artist = artist[:max_a_len - 2] + '..'
 
@@ -131,6 +132,7 @@ class Playlist(StringList):
 
     @classmethod
     def from_path(cls, path):
+        path = path.decode('UTF-8')
         path = os.path.expandvars(os.path.expanduser(path))
         debug.debug('load from', path)
         if path is None:

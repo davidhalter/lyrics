@@ -1,6 +1,8 @@
 import os
 import mutagen.mp3
+
 import database
+from _compatibility import unicode
 
 class Song(object):
     def __init__(self, path, use_cache=False):
@@ -36,27 +38,27 @@ class Song(object):
 
     @property
     def artist(self):
-        return str(self._information.get('TPE1', ''))
+        return unicode(self._information.get('TPE1', ''))
 
     @property
     def song(self):
-        return str(self._information.get('TIT2', self.path))
+        return unicode(self._information.get('TIT2', self.path))
 
     @property
     def album(self):
-        return str(self._information.get('TALB', ''))
+        return unicode(self._information.get('TALB', ''))
 
     @property
     def year(self):
-        return str(self._information.get('TDRC', ''))
+        return unicode(self._information.get('TDRC', ''))
 
     @property
     def track(self):
-        return str(self._information.get('TRCK', ''))
+        return unicode(self._information.get('TRCK', ''))
 
     @property
     def genre(self):
-        return str(self._information.get('TCON', ''))
+        return unicode(self._information.get('TCON', ''))
 
     def export(self):
         """ export all useful id3 values """

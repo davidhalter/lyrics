@@ -34,6 +34,7 @@ class _LyricsDb(object):
     def cursor(self):
         if not self._cursor:
             self._connection = sqlite3.connect(settings.database_path)
+            self._connection.row_factory = sqlite3.Row
             self._cursor = self._connection.cursor()
             # Create table
             self._cursor.execute(self._create_table)
@@ -41,6 +42,7 @@ class _LyricsDb(object):
 
     def save(self, *args):
         self.cursor.execute(self._insert, args)
+        self._connection.commit()
 
     def load(self, *args):
         self.cursor.execute(self._select, args)
@@ -71,17 +73,19 @@ class ID3Cache(object):
     def cursor(self):
         if not self._cursor:
             self._cursor = _LyricsDb.cursor
+            self._connection = _LyricsDb._connection
             # Create table
             self._cursor.execute(self._create_table)
         return self._cursor
 
     def save(self, dct):
         self.cursor.execute(self._insert, dct)
+        self._connection.commit()
 
     def load(self, path):
         self.cursor.execute(self._select, (path,))
         row = self.cursor.fetchone()
-        return row[0] if row is not None else None
+        return None if row is None else dict(zip(row.keys(), row))
 
 
 _LyricsDb = _LyricsDb()
