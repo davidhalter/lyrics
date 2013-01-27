@@ -2,7 +2,7 @@
 Lyrics player
 
 Usage:
-  lyrics <path> <path>... [--debug]
+  lyrics [<path>...] [--debug]
   lyrics -h | --help
   lyrics --version
   lyrics --add <path>
