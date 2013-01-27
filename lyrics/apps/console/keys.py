@@ -142,8 +142,9 @@ def _after_movement():
 
     song = state.playlist.selected
     if song is not None:
-        state.fetched_songs.append(song)
-        song.get_lyrics_thread(got_lyrics)
+        if song not in state.fetched_songs:
+            state.fetched_songs.append(song)
+            song.get_lyrics_thread(got_lyrics)
 
 def _move_cursor(x=0, y=0):
     state.current_window.move_cursor(x, y)

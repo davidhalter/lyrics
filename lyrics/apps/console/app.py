@@ -205,6 +205,7 @@ class SongList(Window):
     def draw(self):
         self.win_curses.erase()
         self.win_curses.box()
+        self.win_curses.bkgd(' ')
 
         length, max_display = self.clean_position(-2, -2)
         playlist = state.playlist
@@ -223,7 +224,6 @@ class SongList(Window):
 
             self.add_str(1, i + 1, song.format(length), col)
 
-        self.win_curses.bkgd(' ')
         self.win_curses.refresh()
 
     def move_cursor(self, x, y):
