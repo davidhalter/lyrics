@@ -1,11 +1,11 @@
 """ the curses implementation """
 
 import curses
+from threading import Lock
 
 import keys
 from lyrics import debug
 import player
-
 from states import state
 
 
@@ -65,14 +65,13 @@ class Window(object):
 class App(Window):
     def __init__(self):
         # need to override the default __init__
-        pass
+        self.draw_lock = Lock()
 
     def start(self):
         curses.wrapper(self.setup)  # the infinite loop
 
     def setup(self, stdscr):
         self.win_curses = stdscr
-        self.height, self.width = self.win_curses.getmaxyx()
 
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
@@ -112,7 +111,8 @@ class App(Window):
         return cls(x, y, width, height)
 
     def draw(self):
-        # setup windows
+        self.draw_lock.acquire()
+        self.height, self.width = self.win_curses.getmaxyx()
         self.head = self.create_window(Head, 0, 0, None, 1)
         if state.split_screen:
             golden = 0.382
@@ -133,6 +133,7 @@ class App(Window):
             pass
 
         curses.doupdate()
+        self.draw_lock.release()
 
 
 class Head(Window):
@@ -149,7 +150,7 @@ class Head(Window):
 
 class Footer(Window):
     def init(self):
-        #self.win_curses.bkgd(' ', curses.color_pair(7))
+        self.win_curses.bkgd(' ')
         last = state.keyboard_repeat + state.last_command
         self.add_str(-5, 0, last, curses.color_pair(2), align='right')
         self.win_curses.noutrefresh()
@@ -169,6 +170,7 @@ class StatusLine(Window):
             col = curses.color_pair(7)
             self.add_str(0, 0, state.playing.format(length, album=True), col)
 
+        self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()
 
 
@@ -221,6 +223,7 @@ class SongList(Window):
 
             self.add_str(1, i + 1, song.format(length), col)
 
+        self.win_curses.bkgd(' ')
         self.win_curses.refresh()
 
     def move_cursor(self, x, y):

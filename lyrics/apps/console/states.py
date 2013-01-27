@@ -16,6 +16,8 @@ class States(object):
         self.keyboard_repeat = ''
         self.command_list = []
 
+        self.fetched_songs = []
+
         self._last_command = ''
         self._random = False
         self._show_help = False
@@ -77,7 +79,7 @@ class States(object):
         if value:
             self.split_screen = True
         else:
-            self.split_screen = self.show_lyrics
+            self.split_screen = self.lyrics
 
     @property
     def lyrics(self):
