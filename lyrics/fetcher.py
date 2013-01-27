@@ -1,7 +1,7 @@
 import re
 
 import requests
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 
 import database
 import debug
@@ -42,8 +42,7 @@ class Wikia(object):
             return None
 
         # parse the result
-        soup = BeautifulSoup(r.text,
-                                convertEntities=BeautifulSoup.HTML_ENTITIES)
+        soup = BeautifulSoup(r.text)
         lyricbox = soup.find('div', "lyricbox")
         if lyricbox is None:
             debug.debug("BeautifulSoup doesn't find content", html_url)

@@ -1,3 +1,4 @@
 docopt
 requests
 mutagen
+beautifulsoup4==4.1.3
