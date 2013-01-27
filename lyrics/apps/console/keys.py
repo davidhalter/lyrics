@@ -142,6 +142,7 @@ def _after_movement():
 
     song = state.playlist.selected
     if song is not None:
+        state.lyrics = 'trying to load lyrics.'
         if song not in state.fetched_songs:
             state.fetched_songs.append(song)
             song.get_lyrics_thread(got_lyrics)

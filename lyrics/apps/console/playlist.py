@@ -15,7 +15,7 @@ class Song(object):
 
     def __repr__(self):
         if not self.artist:
-            return str(self.file_name)
+            return unicode(self.file_name)
         return "%s - %s" % (self.artist, self.song)
 
     def format(self, max_len, album=False):
@@ -38,7 +38,7 @@ class Song(object):
 
         result = "%s - %s" % (song, artist)
         if album and len(result) < max_len - 5 and self.album:
-            result += ' [%s]' % str(self.album[:max_len - len(result) - 3])
+            result += ' [%s]' % unicode(self.album[:max_len - len(result) - 3])
         return result
 
     def search(self, string):
