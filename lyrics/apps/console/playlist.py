@@ -134,20 +134,18 @@ class Playlist(StringList):
         return self.songs[s]
 
     @classmethod
-    def from_path(cls, path):
-        path = path.decode('UTF-8')
-        path = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
-        debug.debug('load from', path)
-        if path is None:
-            return cls.from_library()
-        if os.path.isfile(path):
-            paths = [path]
-        elif os.path.isdir(path):
-            paths = [p for p in os.listdir(path) if not os.path.isdir(p)]
-        else:
-            return cls.from_library()
-        #debug.debug('song paths', paths)
-        return cls([Song(os.path.join(path, p)) for p in paths])
+    def from_path(cls, paths):
+        debug.debug('load from', paths)
+        new_paths = []
+        for path in paths:
+            path = path.decode('UTF-8')
+            path = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
+            if os.path.isfile(path):
+                new_paths += [path]
+            elif os.path.isdir(path):
+                new_paths = [p for p in os.listdir(path) if not os.path.isdir(p)]
+            #debug.debug('song paths', paths)
+        return cls([Song(os.path.join(path, p)) for p in new_paths])
 
     @classmethod
     def from_library(cls):
