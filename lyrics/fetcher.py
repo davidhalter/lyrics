@@ -1,7 +1,7 @@
 import re
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 
 import database
 import debug
@@ -34,8 +34,18 @@ class Wikia(object):
         html_url = match.group(1)
         debug.debug('fetch url', html_url)
         r = requests.get(html_url)
+
+        gracenote = False
         if r.status_code != 200:
-            return None
+            # try it also with Gracenote: (e.g. Glen Hansard - High Hope)
+            html_url = html_url[:9] + \
+                        html_url[9:].replace('/', '/Gracenote:', 1)
+            debug.debug('fetch url', html_url)
+            r = requests.get(html_url)
+            gracenote = True
+            if r.status_code != 200:
+                return None
+
         match = re.search(r"<div class='lyricbox'>", r.text)
         #with open('/home/david/test.txt', 'w') as f:
         #    f.write(r.text.encode('UTF-8'))
@@ -50,10 +60,14 @@ class Wikia(object):
             debug.debug("BeautifulSoup doesn't find content", html_url)
             return None
 
+        if gracenote:
+            # gracenote lyrics are in a separate paragraph
+            lyricbox = lyricbox.find('p')
+
         lyrics = ''
         for c in lyricbox.contents:
             text = unicode(c).strip()
-            if not text.startswith('<'):
+            if type(c) == NavigableString:
                 lyrics += text.strip()
             elif text.startswith('<br'):
                 lyrics += '\n'
