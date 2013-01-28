@@ -135,15 +135,25 @@ class Playlist(StringList):
 
     @classmethod
     def from_path(cls, paths):
+        if not paths:
+            return cls.from_library()
+
+        def is_sound(path):
+            return path[-4:] in ('.mp3', '.wav', '.ogg', '.wmv', 'm3u') \
+                or path[-5:] == '.flac'
+
         debug.debug('load from', paths)
         new_paths = []
         for path in paths:
             path = path.decode('UTF-8')
-            path = os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
+            path = os.path.expandvars(os.path.expanduser(path))
+            path = os.path.abspath(path)
             if os.path.isfile(path):
-                new_paths += [path]
+                if is_sound(path):
+                    new_paths += [path]
             elif os.path.isdir(path):
-                new_paths = [p for p in os.listdir(path) if not os.path.isdir(p)]
+                new_paths = [p for p in os.listdir(path)
+                            if not os.path.isdir(p) and is_sound(p)]
             #debug.debug('song paths', paths)
         return cls([Song(os.path.join(path, p)) for p in new_paths])
 
