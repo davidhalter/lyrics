@@ -20,6 +20,8 @@ class Wikia(object):
         self.url = "http://lyrics.wikia.com/api.php?artist=%s&song=%s&fmt=json"
 
     def fetch(self, artist, song, album):
+        if not artist or not song:
+            return None  # wikia needs both informations
         r = requests.get(self.url % (artist, song))
         if r.status_code != 200:
             return None
