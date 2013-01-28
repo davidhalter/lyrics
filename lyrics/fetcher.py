@@ -50,12 +50,14 @@ class Wikia(object):
             debug.debug("BeautifulSoup doesn't find content", html_url)
             return None
 
-        lyrics = []
+        lyrics = ''
         for c in lyricbox.contents:
-            text = unicode(c)
+            text = unicode(c).strip()
             if not text.startswith('<'):
-                lyrics.append(text.strip())
-        return '\n\n'.join(lyrics).strip()
+                lyrics += text.strip()
+            elif text.startswith('<br'):
+                lyrics += '\n'
+        return lyrics.strip()
 
 
 Wikia = Wikia()
