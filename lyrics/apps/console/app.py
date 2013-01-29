@@ -65,8 +65,8 @@ class NavigableWindow(Window):
     def __init__(self, border=2):
         self.view_at = 0
         self.cursor_at = 0
-        self.border = 0
-        self.scrolloff = 5  # keep at least 5 lines above/below cursor
+        self.border = border
+        self.scroll_off = 5  # keep at least 5 lines above/below cursor
 
     def resize(self, x, y, width, height):
         self._real_height = height - self.border
@@ -76,19 +76,19 @@ class NavigableWindow(Window):
         """ x can always be ignored, it's just about the y movement """
         num_lines = self.get_num_lines()
         self.cursor_at += y
-        self.cursor_at = min(max(self.view_at, 0), num_lines - 1)
-        debug.debug('c', self.cursor_at, y)
+        self.cursor_at = min(max(self.cursor_at, 0), num_lines - 1)
+        debug.debug('c', self.cursor_at, y, self.view_at)
 
-        max_view_top = self.cursor_at + self.scrolloff
-        max_view_bottom = self.cursor_at + self._real_height - self.scrolloff
-        if self.view_at < max_view_top:
-            self.view_at = max(0, max_view_top)
-        elif self.view_at > max_view_bottom:
-            self.view_at = min(max_view_bottom,
-                                num_lines - self._real_height - 1)
+        max_view_bottom = self.view_at + self._real_height - self.scroll_off
+        if self.cursor_at < self.view_at + self.scroll_off:
+            self.view_at = max(0, self.cursor_at - self.scroll_off)
+        elif self.cursor_at > max_view_bottom - 1:
+            self.view_at = min(num_lines - self._real_height - 1,
+                    self.cursor_at - self._real_height + 1 + self.scroll_off)
 
     def visible_in_window(self):
         """ return the two coordinates of the start and the end window """
+        debug.debug('v', self.view_at, self.view_at + self._real_height)
         return self.view_at, self.view_at + self._real_height
 
     def get_num_lines(self):
@@ -229,7 +229,7 @@ class Lyrics(Window):
             txt = "Help\n" + keys.help_documentation()
             txt += "\nWritten by David Halter -> http://jedidjah.ch"
         else:
-            txt = state.lyrics
+            txt = state.lyrics or ''
 
         for i, line in enumerate(txt.splitlines()):
             self.add_str(1, i + 1, line, col)

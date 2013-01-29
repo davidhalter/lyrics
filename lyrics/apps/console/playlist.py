@@ -70,15 +70,6 @@ class Playlist(object):
         except  ValueError:
             self.index = 0
 
-    def visible_in_window(self, *args, **kwargs):
-        self._set_index()
-        return super(Playlist, self).visible_in_window(*args, **kwargs)
-
-    def move_selected(self, *args, **kwargs):
-        self._set_index()
-        super(Playlist, self).move_selected(*args, **kwargs)
-        self.selected = self.songs[self.index]
-
     def next(self, song):
         if song is None:
             return self.selected
