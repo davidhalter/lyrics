@@ -11,8 +11,7 @@ from states import state
 
 class Window(object):
     def __init__(self, x, y, width, height):
-        debug.debug('new_win', self.__class__.__name__, x, y, width, height)
-
+        #debug.debug('new_win', self.__class__.__name__, x, y, width, height)
         self.win_curses = curses.newwin(height, width, y, x)
         self.height, self.width = self.win_curses.getmaxyx()
         self.init()
@@ -60,6 +59,38 @@ class Window(object):
         if y < 0:
             y = height + y
         return x, y
+
+
+class NavigableWindow(Window):
+    def __init__(self, x, y, width, height, border=2):
+        self.view_at = 0
+        self.cursor_at = 0
+        self.border = 0
+        self.scrolloff = 5  # keep at least 5 lines above/below cursor
+
+        self._real_height = height - border
+        super(NavigableWindow, self).__init__(x, y, width, height)
+
+    def move_cursor(self, x, y):
+        """ x can always be ignored, it's just about the y movement """
+        num_lines = self.get_num_lines()
+        debug.debug('n', num_lines)
+        self.cursor_at = min(max(self.view_at, 0), num_lines - 1)
+
+        max_view_top = self.cursor_at + self.scrolloff
+        max_view_bottom = self.cursor_at + self._real_height - self.scrolloff
+        if self.view_at < max_view_top:
+            self.view_at = max(0, max_view_top)
+        elif self.view_at > max_view_bottom:
+            self.view_at = min(max_view_bottom,
+                                num_lines - self._real_height - 1)
+
+    def visible_in_window(self):
+        """ return the two coordinates of the start and the end window """
+        return self.view_at, self.view_at + self._real_height
+
+    def get_num_lines(self):
+        raise NotImplementedError()
 
 
 class App(Window):
@@ -189,7 +220,7 @@ class Lyrics(Window):
             txt = "Help\n" + keys.help_documentation()
             txt += "\nWritten by David Halter -> http://jedidjah.ch"
         else:
-            txt = state.lyrics.replace('\n\n', '\n')
+            txt = state.lyrics
 
         for i, line in enumerate(txt.splitlines()):
             self.add_str(1, i + 1, line, col)
@@ -198,7 +229,7 @@ class Lyrics(Window):
         self.win_curses.refresh()
 
 
-class SongList(Window):
+class SongList(NavigableWindow):
     def init(self):
         self.win_curses.noutrefresh()
 
@@ -209,7 +240,9 @@ class SongList(Window):
 
         length, max_display = self.clean_position(-2, -2)
         playlist = state.playlist
-        for i, song in enumerate(playlist.visible_in_window(max_display)):
+        _range = range(*self.visible_in_window())
+        for i, song_nr in enumerate(_range):
+            song = playlist[song_nr]
             if song == state.playing and song == playlist.selected:
                 col = curses.color_pair(9)
             elif song == playlist.selected:
@@ -227,7 +260,10 @@ class SongList(Window):
         self.win_curses.refresh()
 
     def move_cursor(self, x, y):
-        # later we could also check for other lists here.
-        state.playlist.move_selected(y)
+        super(SongList, self).move_cursor(x, y)
+        state.playlist.selected = state.playlist[self.cursor_at]
+
+    def get_num_lines(self):
+        return len(state.playlist.songs)
 
 main_app = App()
