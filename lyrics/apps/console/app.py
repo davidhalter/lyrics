@@ -10,7 +10,7 @@ from states import state
 
 
 class Window(object):
-    def __init__(self, x, y, width, height):
+    def resize(self, x, y, width, height):
         #debug.debug('new_win', self.__class__.__name__, x, y, width, height)
         self.win_curses = curses.newwin(height, width, y, x)
         self.height, self.width = self.win_curses.getmaxyx()
@@ -62,20 +62,22 @@ class Window(object):
 
 
 class NavigableWindow(Window):
-    def __init__(self, x, y, width, height, border=2):
+    def __init__(self, border=2):
         self.view_at = 0
         self.cursor_at = 0
         self.border = 0
         self.scrolloff = 5  # keep at least 5 lines above/below cursor
 
-        self._real_height = height - border
-        super(NavigableWindow, self).__init__(x, y, width, height)
+    def resize(self, x, y, width, height):
+        self._real_height = height - self.border
+        super(NavigableWindow, self).resize(x, y, width, height)
 
     def move_cursor(self, x, y):
         """ x can always be ignored, it's just about the y movement """
         num_lines = self.get_num_lines()
-        debug.debug('n', num_lines)
+        self.cursor_at += y
         self.cursor_at = min(max(self.view_at, 0), num_lines - 1)
+        debug.debug('c', self.cursor_at, y)
 
         max_view_top = self.cursor_at + self.scrolloff
         max_view_bottom = self.cursor_at + self._real_height - self.scrolloff
@@ -115,6 +117,15 @@ class App(Window):
         curses.init_pair(9, curses.COLOR_BLACK, curses.COLOR_GREEN)
 
         self.win_curses.nodelay(0)
+
+        self.head = Head()
+        self.song_list = SongList()
+        self.lyrics = Lyrics()
+        self.status_line = Footer()
+        self.footer = Footer()
+
+        state.current_window = self.song_list
+
         self.draw()
 
         keys._after_movement()
@@ -136,24 +147,24 @@ class App(Window):
         # cleanup
         player.close()
 
-    def create_window(self, cls, x, y, width, height):
+    def resize_sub_windows(self, window, x, y, width, height):
         x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
-        return cls(x, y, width, height)
+        window.resize(x, y, width, height)
 
     def draw(self):
         self.draw_lock.acquire()
         self.height, self.width = self.win_curses.getmaxyx()
-        self.head = self.create_window(Head, 0, 0, None, 1)
+
+        self.resize_sub_windows(self.head, 0, 0, None, 1)
         if state.split_screen:
             golden = 0.382
-            self.song_list = self.create_window(SongList, 0, 1, golden, -3)
-            self.lyrics = self.create_window(Lyrics, golden, 1, 1 - golden, -3)
+            self.resize_sub_windows(self.song_list, 0, 1, golden, -3)
+            self.resize_sub_windows(self.lyrics, golden, 1, 1 - golden, -3)
         else:
-            self.song_list = self.create_window(SongList, 0, 1, None, -3)
-        self.status_line = self.create_window(StatusLine, 0, -2, None, 1)
-        self.footer = self.create_window(Footer, 0, -1, None, 1)
-        state.current_window = self.song_list
+            self.resize_sub_windows(self.song_list, 0, 1, None, -3)
+        self.resize_sub_windows(self.status_line, 0, -2, None, 1)
+        self.resize_sub_windows(self.footer, 0, -1, None, 1)
 
         # setup cursor
         if state.search_mode:
@@ -168,7 +179,7 @@ class App(Window):
 
 
 class Head(Window):
-    def init(self):
+    def draw(self):
         if state.search_mode:
             info = '/' + state.search
         else:
@@ -180,7 +191,7 @@ class Head(Window):
 
 
 class Footer(Window):
-    def init(self):
+    def draw(self):
         self.win_curses.bkgd(' ')
         last = state.keyboard_repeat + state.last_command
         self.add_str(-5, 0, last, curses.color_pair(2), align='right')
@@ -188,7 +199,7 @@ class Footer(Window):
 
 
 class StatusLine(Window):
-    def init(self):
+    def draw(self):
         self.win_curses.bkgd(' ', curses.color_pair(7))
 
         r = 'repeat' if state.repeat else 'solo' if state.repeat_solo \
@@ -206,10 +217,8 @@ class StatusLine(Window):
 
 
 class Lyrics(Window):
-    def init(self):
-        self.win_curses.noutrefresh()
-
     def draw(self):
+        self.win_curses.noutrefresh()
         self.win_curses.erase()
         #self.win_curses.box()
 
@@ -230,10 +239,8 @@ class Lyrics(Window):
 
 
 class SongList(NavigableWindow):
-    def init(self):
-        self.win_curses.noutrefresh()
-
     def draw(self):
+        self.win_curses.noutrefresh()
         self.win_curses.erase()
         self.win_curses.box()
         self.win_curses.bkgd(' ')

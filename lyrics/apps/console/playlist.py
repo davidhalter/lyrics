@@ -43,32 +43,12 @@ class Song(object):
                 or string.lower() in self.artist.lower()
 
 
-class StringList(object):
-    def __init__(self, strings, index=0):
-        self.strings = strings
-        self.index = 0
-
-    def visible_in_window(self, count):
-        length = len(self.songs)
-        lookat = max(0, self.index - int(count / 2))
-        lookat = min(lookat, length - int(count / 2))
-
-        selection = self.songs[lookat:lookat + count]
-        return selection
-
-    def move_selected(self, count):
-        """count can be negative"""
-        self.index += count
-        self.index = min(max(self.index, 0), len(self.strings) - 1)
-
-
-class Playlist(StringList):
+class Playlist(object):
     def __init__(self, songs, selected=None, parent=None):
-        super(Playlist, self).__init__(songs)
-        self.songs = songs
-        self.selected = selected or self.songs[0] if self.songs else None
         self.parent = parent
+        self.songs = songs
         self.sort()
+        self.selected = selected or self.songs[0] if self.songs else None
 
     def __len__(self):
         return len(self.songs)
