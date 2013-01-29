@@ -57,7 +57,7 @@ class Playlist(object):
         return self.songs[key]
 
     def sort(self):
-        sort_func = lambda song: (song.artist, song.song)
+        sort_func = lambda song: (not song.artist, song.artist, song.song)
         self.songs = sorted(self.songs, key=sort_func)
 
     def search(self, string):

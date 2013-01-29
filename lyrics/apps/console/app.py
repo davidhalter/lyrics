@@ -2,6 +2,8 @@
 
 import curses
 from threading import Lock
+import textwrap
+import itertools
 
 import keys
 from lyrics import debug
@@ -70,6 +72,7 @@ class NavigableWindow(Window):
 
     def resize(self, x, y, width, height):
         self._real_height = height - self.border
+        self._real_width = width - 2
         super(NavigableWindow, self).resize(x, y, width, height)
 
     def move_cursor(self, x, y):
@@ -216,7 +219,21 @@ class StatusLine(Window):
         self.win_curses.noutrefresh()
 
 
-class Lyrics(Window):
+class Lyrics(NavigableWindow):
+    @property
+    def lines(self):
+        """ returns the lines """
+        if state.show_help:
+            txt = "Help\n" + keys.help_documentation()
+            txt += "\nWritten by David Halter -> http://jedidjah.ch"
+        else:
+            txt = state.lyrics or ''
+
+        w = self._real_width
+        return itertools.chain.from_iterable(textwrap.wrap(line, w)
+                                            for line in txt.splitlines())
+
+
     def draw(self):
         self.win_curses.noutrefresh()
         self.win_curses.erase()
@@ -225,17 +242,13 @@ class Lyrics(Window):
         length, max_display = self.clean_position(-2, -2)
 
         col = curses.color_pair(1)
-        if state.show_help:
-            txt = "Help\n" + keys.help_documentation()
-            txt += "\nWritten by David Halter -> http://jedidjah.ch"
-        else:
-            txt = state.lyrics or ''
-
-        for i, line in enumerate(txt.splitlines()):
+        for i, line in enumerate(self.lines):
             self.add_str(1, i + 1, line, col)
-
         self.win_curses.bkgd(' ')
         self.win_curses.refresh()
+
+    def get_num_lines(self):
+        return len(self.lines)
 
 
 class SongList(NavigableWindow):
