@@ -14,11 +14,6 @@ class Song(object):
     def __getattr__(self, name):
         return getattr(self._song, name)
 
-    def __repr__(self):
-        if not self.artist:
-            return unicode(self.file_name)
-        return "%s - %s" % (self.artist, self.song)
-
     def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
         if not self.artist:
