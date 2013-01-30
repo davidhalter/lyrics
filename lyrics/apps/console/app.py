@@ -94,7 +94,8 @@ class NavigableWindow(Window):
     def visible_in_window(self):
         """ return the two coordinates of the start and the end window """
         debug.debug('v', self.view_at, self.view_at + self._real_height)
-        return self.view_at, self.view_at + self._real_height
+        return self.view_at, min(self.view_at + self._real_height,
+                                    self.get_num_lines())
 
     def get_num_lines(self):
         raise NotImplementedError()
@@ -250,10 +251,16 @@ class Lyrics(NavigableWindow):
 
         length, max_display = self.clean_position(-2, -2)
 
+        lines = self.lines
         self.win_curses.bkgd(' ')
-        col = curses.color_pair(1)
-        for i, line in enumerate(self.lines):
-            self.add_str(1, i + 1, line, col)
+        debug.debug('t', self.visible_in_window())
+        for i, line_nr in enumerate(range(*self.visible_in_window())):
+            col = curses.color_pair(0)
+            if state.current_window == self and self.cursor_at == line_nr:
+                col = curses.color_pair(6)
+                self.win_curses.hline(i + 1, 1, ' ', length, col)
+            self.add_str(1, i + 1, lines[line_nr], col)
+
         self.win_curses.refresh()
 
     def get_num_lines(self):
@@ -282,7 +289,10 @@ class SongList(NavigableWindow):
             elif song == state.playing:
                 col = curses.color_pair(4)
             else:
-                col = curses.color_pair(5)
+                col = curses.color_pair(0)
+
+            if state.current_window != self:
+                col = curses.color_pair(0)
 
             if song == state.playing or song == playlist.selected:
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
