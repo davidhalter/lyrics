@@ -68,11 +68,11 @@ class NavigableWindow(Window):
         self.cursor_at = 0
         self.border = border
         self.scroll_off = 5  # keep at least 5 lines above/below cursor
-        self._real_height = 0
+        self.real_height = 0
         self._real_width = 0
 
     def resize(self, x, y, width, height):
-        self._real_height = height - self.border
+        self.real_height = height - self.border
         self._real_width = width - 2
         super(NavigableWindow, self).resize(x, y, width, height)
 
@@ -84,17 +84,17 @@ class NavigableWindow(Window):
         debug.debug('cursor', state.current_window, self.cursor_at, y,
                                 self.view_at)
 
-        max_view_bottom = self.view_at + self._real_height - self.scroll_off
+        max_view_bottom = self.view_at + self.real_height - self.scroll_off
         if self.cursor_at < self.view_at + self.scroll_off:
             self.view_at = max(0, self.cursor_at - self.scroll_off)
         elif self.cursor_at > max_view_bottom - 1:
-            self.view_at = min(num_lines - self._real_height,
-                    self.cursor_at - self._real_height + 1 + self.scroll_off)
+            self.view_at = min(num_lines - self.real_height,
+                    self.cursor_at - self.real_height + 1 + self.scroll_off)
 
     def visible_in_window(self):
         """ return the two coordinates of the start and the end window """
-        debug.debug('v', self.view_at, self.view_at + self._real_height)
-        return self.view_at, min(self.view_at + self._real_height,
+        debug.debug('v', self.view_at, self.view_at + self.real_height)
+        return self.view_at, min(self.view_at + self.real_height,
                                     self.get_num_lines())
 
     def get_num_lines(self):
@@ -191,7 +191,7 @@ class Head(Window):
         if state.search_mode:
             info = '/' + state.search
         else:
-            info = "lyrics - press H for help."
+            info = "lyrics - press F2 for help."
         self.add_str(0, 0, info, curses.color_pair(4))
         self.win_curses.bkgd(' ', curses.color_pair(7))
         self.win_curses.noutrefresh()

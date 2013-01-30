@@ -172,11 +172,11 @@ def move_left():
 
 @key('<C-U>', 'u')
 def move_half_page_up():
-    _move_cursor(y=-int(state.current_window.height / 2))
+    _move_cursor(y=-int(state.current_window.real_height / 2))
 
 @key('<C-D>', 'd')
 def move_half_page_down():
-    _move_cursor(y=int(state.current_window.height / 2))
+    _move_cursor(y=int(state.current_window.real_height / 2))
 
 @key('<C-B>', '<PageUp>')
 def move_page_up():
@@ -193,6 +193,33 @@ def repeat_last_action():
             break
     if state.command_list:
         execute_key_command(command, repeat)
+
+@key('g')
+def move_to_start():
+    _move_cursor(y=-state.current_window.cursor_at)
+
+@key('G')
+def move_to_end():
+    y = -state.current_window.cursor_at + state.current_window.get_num_lines()
+    _move_cursor(y=y)
+
+@key('H')
+def move_to_high():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + w.scroll_off
+    _move_cursor(y=y)
+
+@key('M')
+def move_to_middle():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + int(w.real_height / 2)
+    _move_cursor(y=y)
+
+@key('L')
+def move_to_low():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + w.real_height - w.scroll_off - 1
+    _move_cursor(y=y)
 
 # ------------------------------------------------------------------------
 # gui modifications
@@ -222,7 +249,7 @@ def repeat_solo():
     """repeat solo - iterate solo"""
     state.repeat_solo = not state.repeat_solo
 
-@key('H', '<F3>')
+@key(':', '<F2>')
 def help():
     """help - shows this"""
     state.show_help = not state.show_help
