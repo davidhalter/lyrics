@@ -34,6 +34,9 @@ class Wikia(object):
 
         html_url = match.group(1)
         debug.debug('fetch url', html_url)
+        if 'action=edit' in html_url:
+            return None
+
         r = requests.get(html_url)
 
         gracenote = False

@@ -97,7 +97,7 @@ class States(object):
         if value:
             self.split_screen = True
         elif not self.show_help:
-            self.current_window = state.window_lyrics
+            self.current_window = state.window_song_list
             self.split_screen = False
 
 

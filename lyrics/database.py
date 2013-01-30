@@ -13,6 +13,7 @@ def load(artist, song, album):
 
 def save(artist, song, album, lyrics):
     if settings.use_database:
+        debug.debug('save' )
         return _LyricsDb.save(artist, song, album, lyrics)
 
 
@@ -30,7 +31,11 @@ _db_lock = threading.Lock()
 def _sqlite_threadsafe(func):
     def wrapper(*args, **kwargs):
         _db_lock.acquire()
-        result = func(*args, **kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except:
+            _db_lock.release()
+            raise
         _db_lock.release()
         return result
     return wrapper
@@ -58,6 +63,7 @@ class _LyricsDb(object):
 
     @_sqlite_threadsafe
     def save(self, *args):
+        debug.debug('savex', args)
         connection, cursor = self.get_cursor()
         cursor.execute(self._insert, args)
         connection.commit()

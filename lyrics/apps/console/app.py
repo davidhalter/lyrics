@@ -69,6 +69,8 @@ class NavigableWindow(Window):
         self.cursor_at = 0
         self.border = border
         self.scroll_off = 5  # keep at least 5 lines above/below cursor
+        self._real_height = 0
+        self._real_width = 0
 
     def resize(self, x, y, width, height):
         self._real_height = height - self.border
@@ -80,7 +82,8 @@ class NavigableWindow(Window):
         num_lines = self.get_num_lines()
         self.cursor_at += y
         self.cursor_at = min(max(self.cursor_at, 0), num_lines - 1)
-        debug.debug('cursor', self.cursor_at, y, self.view_at)
+        debug.debug('cursor', state.current_window, self.cursor_at, y,
+                                self.view_at)
 
         max_view_bottom = self.view_at + self._real_height - self.scroll_off
         if self.cursor_at < self.view_at + self.scroll_off:
@@ -289,6 +292,7 @@ class SongList(NavigableWindow):
         state.playlist.selected = state.playlist[self.cursor_at]
 
     def get_num_lines(self):
-        return len(list(state.playlist.songs))
+        debug.debug('asdf', len(state.playlist.songs))
+        return len(state.playlist.songs)
 
 main_app = App()
