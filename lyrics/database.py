@@ -43,7 +43,7 @@ class _LyricsDb(object):
         artist text not null,
         song text not null,
         album text not null,
-        lyrics text not null,
+        lyrics text null,
         unique(artist, song, album)
     )
     """
