@@ -8,7 +8,7 @@ def load(artist, song, album):
     if settings.use_database:
         return _LyricsDb.load(artist, song, album)
     else:
-        return None
+        raise LookupError('settings.use_database = False')
 
 
 def save(artist, song, album, lyrics):
@@ -67,7 +67,9 @@ class _LyricsDb(object):
         connection, cursor = self.get_cursor()
         cursor.execute(self._select, args)
         row = cursor.fetchone()
-        return row[0] if row is not None else None
+        if row is None:
+            raise LookupError('Row not found')
+        return row[0]
 
 
 class ID3Cache(object):
