@@ -4,13 +4,14 @@ import requests
 from bs4 import BeautifulSoup, NavigableString
 
 import database
+import settings
 import debug
 from _compatibility import unicode
 
 
 def fetch(artist, song, album):
     lyrics = Wikia.fetch(artist, song, album)
-    if lyrics:
+    if lyrics or settings.save_not_found_lyrics:
         database.save(artist, song, album, lyrics)
     return lyrics
 
