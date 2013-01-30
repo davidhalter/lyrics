@@ -88,7 +88,7 @@ class NavigableWindow(Window):
         if self.cursor_at < self.view_at + self.scroll_off:
             self.view_at = max(0, self.cursor_at - self.scroll_off)
         elif self.cursor_at > max_view_bottom - 1:
-            self.view_at = min(num_lines - self._real_height - 1,
+            self.view_at = min(num_lines - self._real_height,
                     self.cursor_at - self._real_height + 1 + self.scroll_off)
 
     def visible_in_window(self):
@@ -259,7 +259,11 @@ class Lyrics(NavigableWindow):
             if state.current_window == self and self.cursor_at == line_nr:
                 col = curses.color_pair(6)
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
-            self.add_str(1, i + 1, lines[line_nr], col)
+            try:
+                self.add_str(1, i + 1, lines[line_nr], col)
+            except IndexError:
+                # thread problems
+                break
 
         self.win_curses.refresh()
 
