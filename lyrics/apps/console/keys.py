@@ -163,11 +163,12 @@ def move_up():
 
 @key('l', '<Right>')
 def move_right():
-    _move_cursor(x=1)
+    if state.split_screen:
+        state.current_window = state.window_lyrics
 
 @key('h', '<Left>')
 def move_left():
-    _move_cursor(x=-1)
+    state.current_window = state.window_playlist
 
 @key('<C-U>', 'u')
 def move_half_page_up():

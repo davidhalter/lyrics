@@ -80,7 +80,7 @@ class NavigableWindow(Window):
         num_lines = self.get_num_lines()
         self.cursor_at += y
         self.cursor_at = min(max(self.cursor_at, 0), num_lines - 1)
-        debug.debug('c', self.cursor_at, y, self.view_at)
+        debug.debug('cursor', self.cursor_at, y, self.view_at)
 
         max_view_bottom = self.view_at + self._real_height - self.scroll_off
         if self.cursor_at < self.view_at + self.scroll_off:
@@ -121,11 +121,11 @@ class App(Window):
 
         self.win_curses.nodelay(0)
 
-        self.head = Head()
-        self.song_list = SongList()
-        self.lyrics = Lyrics()
-        self.status_line = Footer()
-        self.footer = Footer()
+        state.window_head = self.head = Head()
+        state.window_song_list = self.song_list = SongList()
+        state.window_lyrics = self.lyrics = Lyrics()
+        state.window_status_line = self.status_line = Footer()
+        state.window_footer = self.footer = Footer()
 
         state.current_window = self.song_list
 
@@ -158,6 +158,8 @@ class App(Window):
     def draw(self):
         self.draw_lock.acquire()
         self.height, self.width = self.win_curses.getmaxyx()
+
+        self.win_curses.bkgd(' ')
 
         self.resize_sub_windows(self.head, 0, 0, None, 1)
         if state.split_screen:
@@ -230,8 +232,8 @@ class Lyrics(NavigableWindow):
             txt = state.lyrics or ''
 
         w = self._real_width
-        return itertools.chain.from_iterable(textwrap.wrap(line, w)
-                                            for line in txt.splitlines())
+        return list(itertools.chain.from_iterable(textwrap.wrap(line, w)
+                                            for line in txt.splitlines()))
 
 
     def draw(self):
@@ -241,10 +243,10 @@ class Lyrics(NavigableWindow):
 
         length, max_display = self.clean_position(-2, -2)
 
+        self.win_curses.bkgd(' ')
         col = curses.color_pair(1)
         for i, line in enumerate(self.lines):
             self.add_str(1, i + 1, line, col)
-        self.win_curses.bkgd(' ')
         self.win_curses.refresh()
 
     def get_num_lines(self):
@@ -262,7 +264,10 @@ class SongList(NavigableWindow):
         playlist = state.playlist
         _range = range(*self.visible_in_window())
         for i, song_nr in enumerate(_range):
-            song = playlist[song_nr]
+            try:
+                song = playlist[song_nr]
+            except IndexError:
+                break
             if song == state.playing and song == playlist.selected:
                 col = curses.color_pair(9)
             elif song == playlist.selected:
@@ -284,6 +289,6 @@ class SongList(NavigableWindow):
         state.playlist.selected = state.playlist[self.cursor_at]
 
     def get_num_lines(self):
-        return len(state.playlist.songs)
+        return len(list(state.playlist.songs))
 
 main_app = App()
