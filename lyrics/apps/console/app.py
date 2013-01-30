@@ -3,7 +3,6 @@
 import curses
 from threading import Lock
 import textwrap
-import itertools
 
 import keys
 from lyrics import debug
@@ -235,8 +234,13 @@ class Lyrics(NavigableWindow):
             txt = state.lyrics or ''
 
         w = self._real_width
-        return list(itertools.chain.from_iterable(textwrap.wrap(line, w)
-                                            for line in txt.splitlines()))
+        lines = []
+        for line in txt.splitlines():
+            if line == '':
+                lines.append('')
+            else:
+                lines += textwrap.wrap(line, w)
+        return lines
 
 
     def draw(self):

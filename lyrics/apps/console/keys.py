@@ -168,7 +168,7 @@ def move_right():
 
 @key('h', '<Left>')
 def move_left():
-    state.current_window = state.window_playlist
+    state.current_window = state.window_song_list
 
 @key('<C-U>', 'u')
 def move_half_page_up():
