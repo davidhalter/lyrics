@@ -127,7 +127,7 @@ class App(Window):
         state.window_head = self.head = Head()
         state.window_song_list = self.song_list = SongList()
         state.window_lyrics = self.lyrics = Lyrics()
-        state.window_status_line = self.status_line = Footer()
+        state.window_status_line = self.status_line = StatusLine()
         state.window_footer = self.footer = Footer()
 
         state.current_window = self.song_list
