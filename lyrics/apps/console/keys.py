@@ -384,6 +384,9 @@ def search_backspace():
 def search_enter():
     state.search_mode = False
     _search_update()
+    state.window_song_list.view_at = 0
+    state.window_song_list.cursor_at = 0
+    state.playlist.selected = state.playlist.songs[0]
 
 @key('<Esc>', mode='search')
 def search_cancel():
