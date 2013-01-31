@@ -342,6 +342,7 @@ def previous():
 def clear_search():
     if state.playlist.parent is not None:
         state.playlist = state.playlist.parent
+        state.window_song_list.cursor_at = state.playlist.get_selected_index()
 
 @key('/')
 def search():

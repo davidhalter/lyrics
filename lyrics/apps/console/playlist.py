@@ -64,11 +64,11 @@ class Playlist(object):
         return Playlist([s for s in self.songs if s.search(string)],
                                 selected=self.selected, parent=self)
 
-    def _set_index(self):
+    def get_selected_index(self):
         try:
-            self.index = self.songs.index(self.selected)
-        except  ValueError:
-            self.index = 0
+            return self.songs.index(self.selected)
+        except ValueError:
+            return 0
 
     def next(self, song):
         if song is None:
@@ -87,7 +87,6 @@ class Playlist(object):
             return None
         else:
             return self.songs[i - 1]
-
 
     def random(self, song=None):
         if len(self.songs) == 1:
