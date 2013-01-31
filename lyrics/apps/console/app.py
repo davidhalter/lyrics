@@ -110,6 +110,7 @@ class App(Window):
         curses.wrapper(self.setup)  # the infinite loop
 
     def setup(self, stdscr):
+        curses.nonl()
         self.win_curses = stdscr
 
         curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)

@@ -18,7 +18,7 @@ curses_mapping = {
     curses.KEY_BACKSPACE:   '<BS>',
     curses.KEY_LEFT:        '<Left>',
     curses.KEY_RIGHT:       '<Right>',
-    curses.ascii.NL:        '<Enter>',
+    curses.ascii.CR:        '<Enter>',
     curses.ascii.ESC:       '<ESC>',
     curses.ascii.SP:        '<SPACE>',
     curses.KEY_F1:          '<F1>',
