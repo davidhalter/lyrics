@@ -142,7 +142,7 @@ class App(Window):
     def run(self):
         while True:
             try:
-                c = self.head.win_curses.getch()
+                c = self.head.win_curses.getkey()
                 if c == curses.KEY_RESIZE:
                     self.draw()
                     continue

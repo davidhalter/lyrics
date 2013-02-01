@@ -2,7 +2,6 @@
 
 import os
 import re
-import curses.ascii
 
 import player
 from lyrics import debug
@@ -11,28 +10,31 @@ from states import state
 import app
 
 curses_mapping = {
-    curses.KEY_NPAGE:       '<PageDown>',
-    curses.KEY_PPAGE:       '<PageUp>',
-    curses.KEY_DOWN:        '<Down>',
-    curses.KEY_UP:          '<Up>',
-    curses.KEY_BACKSPACE:   '<BS>',
-    curses.KEY_LEFT:        '<Left>',
-    curses.KEY_RIGHT:       '<Right>',
-    curses.ascii.CR:        '<Enter>',
-    curses.ascii.ESC:       '<ESC>',
-    curses.ascii.SP:        '<SPACE>',
-    curses.KEY_F1:          '<F1>',
-    curses.KEY_F2:          '<F2>',
-    curses.KEY_F3:          '<F3>',
-    curses.KEY_F4:          '<F4>',
-    curses.KEY_F5:          '<F5>',
-    curses.KEY_F6:          '<F6>',
-    curses.KEY_F7:          '<F7>',
-    curses.KEY_F8:          '<F8>',
-    curses.KEY_F9:          '<F9>',
-    curses.KEY_F10:         '<F10>',
-    curses.KEY_F11:         '<F11>',
-    curses.KEY_F12:         '<F12>',
+    'KEY_NPAGE':        '<PageDown>',
+    'KEY_PPAGE':        '<PageUp>',
+    'KEY_DOWN':         '<Down>',
+    'KEY_UP':           '<Up>',
+    'KEY_BACKSPACE':    '<BS>',
+    'KEY_LEFT':         '<Left>',
+    'KEY_RIGHT':        '<Right>',
+    'KEY_END':          '<End>',
+    'KEY_HOME':         '<Home>',
+    '\n':               '<C-J>',
+    '\r':               '<Enter>',
+    '^[':               '<ESC>',
+    ' ':                '<SPACE>',
+    'KEY_F(1)':         '<F1>',
+    'KEY_F(2)':         '<F2>',
+    'KEY_F(3)':         '<F3>',
+    'KEY_F(4)':         '<F4>',
+    'KEY_F(5)':         '<F5>',
+    'KEY_F(6)':         '<F6>',
+    'KEY_F(7)':         '<F7>',
+    'KEY_F(8)':         '<F8>',
+    'KEY_F(9)':         '<F9>',
+    'KEY_F(10)':        '<F10>',
+    'KEY_F(11)':        '<F11>',
+    'KEY_F(12)':        '<F12>',
 }
 for c in curses_mapping:
     curses_mapping[c] = curses_mapping[c].upper()
@@ -72,19 +74,20 @@ def help_documentation():
     return s
 
 
-def event_handler(key_chr):
-    debug.debug('key pressed', repr(key_chr))
+def event_handler(key_str):
+    debug.debug('key pressed', repr(key_str))
 
     # strip ctrl
     #key_chr = curses.ascii.ctrl(key_chr)
 
     try:
-        key_str = curses_mapping[key_chr]
+        key_str = curses_mapping[key_str]
     except KeyError:
-        key_str = chr(key_chr)
+        if len(key_str) > 1 and key_str[0] == '^':
+            key_str = '<C-%s>' % key_str[1:]
         # TODO catch control keys
 
-    debug.debug('key pressed', repr(key_chr), key_str)
+    debug.debug('key resolved as', key_str)
 
     if state.search_mode:
         if key_str == '<SPACE>':
