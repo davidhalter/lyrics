@@ -4,6 +4,7 @@ import curses
 from threading import Lock
 import textwrap
 
+import color
 import keys
 from lyrics import debug
 import player
@@ -113,15 +114,7 @@ class App(Window):
         curses.nonl()
         self.win_curses = stdscr
 
-        curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
-        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-        curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLACK)
-        curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
-        curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_GREEN)
-        curses.init_pair(8, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-        curses.init_pair(9, curses.COLOR_BLACK, curses.COLOR_GREEN)
+        color.init()
 
         self.win_curses.nodelay(0)
 
@@ -193,8 +186,8 @@ class Head(Window):
             info = '/' + state.search
         else:
             info = "lyrics - press F2 for help."
-        self.add_str(0, 0, info, curses.color_pair(4))
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+        self.add_str(0, 0, info, color.GREEN)
+        self.win_curses.bkgd(' ', color.BG_GREEN)
         self.win_curses.noutrefresh()
         self.win_curses.keypad(1)  # because it does the key handling
 
@@ -203,25 +196,25 @@ class Footer(Window):
     def draw(self):
         self.win_curses.bkgd(' ')
         last = state.keyboard_repeat + state.last_command
-        self.add_str(-5, 0, last, curses.color_pair(2), align='right')
+        self.add_str(-5, 0, last, color.BLUE, align='right')
         self.win_curses.noutrefresh()
 
 
 class StatusLine(Window):
     def draw(self):
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+        self.win_curses.bkgd(' ', color.BG_GREEN)
 
         r = 'repeat' if state.repeat else 'solo' if state.repeat_solo \
                                                         else 'no-repeat'
         status = "[%s, %s]" % (r, 'random' if state.random else 'no-random')
-        self.add_str(-1, 0, status, curses.color_pair(2), align='right')
+        self.add_str(-1, 0, status, color.BLUE, align='right')
 
         if state.playing is not None:
             length = self.width - 2 - len(status)
-            col = curses.color_pair(7)
+            col = color.BG_GREEN
             self.add_str(0, 0, state.playing.format(length, album=True), col)
 
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+        self.win_curses.bkgd(' ', color.BG_GREEN)
         self.win_curses.noutrefresh()
 
 
@@ -256,9 +249,9 @@ class Lyrics(NavigableWindow):
         self.win_curses.bkgd(' ')
         debug.debug('t', self.visible_in_window())
         for i, line_nr in enumerate(range(*self.visible_in_window())):
-            col = curses.color_pair(0)
+            col = color.DEFAULT
             if state.current_window == self and self.cursor_at == line_nr:
-                col = curses.color_pair(6)
+                col = color.BG_MAGENTA
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
             try:
                 self.add_str(1, i + 1, lines[line_nr], col)
@@ -288,16 +281,16 @@ class SongList(NavigableWindow):
             except IndexError:
                 break
             if song == state.playing and song == playlist.selected:
-                col = curses.color_pair(9)
+                col = color.BG_GREEN
             elif song == playlist.selected:
-                col = curses.color_pair(6)
+                col = color.BG_MAGENTA
             elif song == state.playing:
-                col = curses.color_pair(4)
+                col = color.GREEN
             else:
-                col = curses.color_pair(0)
+                col = color.DEFAULT
 
             if state.current_window != self:
-                col = curses.color_pair(0)
+                col = color.DEFAULT
 
             if song == state.playing or song == playlist.selected:
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
