@@ -197,11 +197,11 @@ def repeat_last_action():
     if state.command_list:
         execute_key_command(command, repeat)
 
-@key('g')
-def move_to_start():
+@key('g', '<Home>')
+def move_to_home():
     _move_cursor(y=-state.current_window.cursor_at)
 
-@key('G')
+@key('G', '<End>')
 def move_to_end():
     y = -state.current_window.cursor_at + state.current_window.get_num_lines()
     _move_cursor(y=y)
