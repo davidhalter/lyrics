@@ -1,6 +1,7 @@
 import re
 
 import requests
+from requests.exceptions import ConnectionError
 from bs4 import BeautifulSoup
 
 import database
@@ -9,9 +10,13 @@ from _compatibility import unicode
 
 
 def fetch(artist, song, album):
-    lyrics = Wikia.fetch(artist, song, album)
-    if lyrics:
-        database.save(artist, song, album, lyrics)
+    try:
+        lyrics = Wikia.fetch(artist, song, album)
+        if lyrics:
+            database.save(artist, song, album, lyrics)
+    except ConnectionError as e:
+        lyrics = 'Could not fetch lyrics. Connection failed.'
+        debug.debug('Connection error: %r'% e)
     return lyrics
 
 
