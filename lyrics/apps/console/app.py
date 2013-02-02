@@ -2,7 +2,9 @@
 
 import curses
 from threading import Lock
+import textwrap
 
+import color
 import keys
 from lyrics import debug
 import player
@@ -10,9 +12,8 @@ from states import state
 
 
 class Window(object):
-    def __init__(self, x, y, width, height):
-        debug.debug('new_win', self.__class__.__name__, x, y, width, height)
-
+    def resize(self, x, y, width, height):
+        #debug.debug('new_win', self.__class__.__name__, x, y, width, height)
         self.win_curses = curses.newwin(height, width, y, x)
         self.height, self.width = self.win_curses.getmaxyx()
         self.init()
@@ -62,6 +63,45 @@ class Window(object):
         return x, y
 
 
+class NavigableWindow(Window):
+    def __init__(self, border=2):
+        self.view_at = 0
+        self.cursor_at = 0
+        self.border = border
+        self.scroll_off = 5  # keep at least 5 lines above/below cursor
+        self.real_height = 0
+        self._real_width = 0
+
+    def resize(self, x, y, width, height):
+        self.real_height = height - self.border
+        self._real_width = width - 2
+        super(NavigableWindow, self).resize(x, y, width, height)
+
+    def move_cursor(self, x, y):
+        """ x can always be ignored, it's just about the y movement """
+        num_lines = self.get_num_lines()
+        self.cursor_at += y
+        self.cursor_at = min(max(self.cursor_at, 0), num_lines - 1)
+        debug.debug('cursor', state.current_window, self.cursor_at, y,
+                                self.view_at)
+
+        max_view_bottom = self.view_at + self.real_height - self.scroll_off
+        if self.cursor_at < self.view_at + self.scroll_off:
+            self.view_at = max(0, self.cursor_at - self.scroll_off)
+        elif self.cursor_at > max_view_bottom - 1:
+            self.view_at = min(num_lines - self.real_height,
+                    self.cursor_at - self.real_height + 1 + self.scroll_off)
+
+    def visible_in_window(self):
+        """ return the two coordinates of the start and the end window """
+        debug.debug('v', self.view_at, self.view_at + self.real_height)
+        return self.view_at, min(self.view_at + self.real_height,
+                                    self.get_num_lines())
+
+    def get_num_lines(self):
+        raise NotImplementedError()
+
+
 class App(Window):
     def __init__(self):
         # need to override the default __init__
@@ -71,19 +111,21 @@ class App(Window):
         curses.wrapper(self.setup)  # the infinite loop
 
     def setup(self, stdscr):
+        curses.nonl()
         self.win_curses = stdscr
 
-        curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_BLUE, curses.COLOR_BLACK)
-        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-        curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)
-        curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLACK)
-        curses.init_pair(6, curses.COLOR_BLACK, curses.COLOR_MAGENTA)
-        curses.init_pair(7, curses.COLOR_BLACK, curses.COLOR_GREEN)
-        curses.init_pair(8, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-        curses.init_pair(9, curses.COLOR_BLACK, curses.COLOR_GREEN)
+        color.init()
 
         self.win_curses.nodelay(0)
+
+        state.window_head = self.head = Head()
+        state.window_song_list = self.song_list = SongList()
+        state.window_lyrics = self.lyrics = Lyrics()
+        state.window_status_line = self.status_line = StatusLine()
+        state.window_footer = self.footer = Footer()
+
+        state.current_window = self.song_list
+
         self.draw()
 
         keys._after_movement()
@@ -93,7 +135,7 @@ class App(Window):
     def run(self):
         while True:
             try:
-                c = self.head.win_curses.getch()
+                c = self.head.win_curses.getkey()
                 if c == curses.KEY_RESIZE:
                     self.draw()
                     continue
@@ -105,24 +147,26 @@ class App(Window):
         # cleanup
         player.close()
 
-    def create_window(self, cls, x, y, width, height):
+    def resize_sub_windows(self, window, x, y, width, height):
         x, y = self.clean_position(x, y)
         width, height = self.clean_position(width, height)
-        return cls(x, y, width, height)
+        window.resize(x, y, width, height)
 
     def draw(self):
         self.draw_lock.acquire()
         self.height, self.width = self.win_curses.getmaxyx()
-        self.head = self.create_window(Head, 0, 0, None, 1)
+
+        self.win_curses.bkgd(' ')
+
+        self.resize_sub_windows(self.head, 0, 0, None, 1)
         if state.split_screen:
             golden = 0.382
-            self.song_list = self.create_window(SongList, 0, 1, golden, -3)
-            self.lyrics = self.create_window(Lyrics, golden, 1, 1 - golden, -3)
+            self.resize_sub_windows(self.song_list, 0, 1, golden, -3)
+            self.resize_sub_windows(self.lyrics, golden, 1, 1 - golden, -3)
         else:
-            self.song_list = self.create_window(SongList, 0, 1, None, -3)
-        self.status_line = self.create_window(StatusLine, 0, -2, None, 1)
-        self.footer = self.create_window(Footer, 0, -1, None, 1)
-        state.current_window = self.song_list
+            self.resize_sub_windows(self.song_list, 0, 1, None, -3)
+        self.resize_sub_windows(self.status_line, 0, -2, None, 1)
+        self.resize_sub_windows(self.footer, 0, -1, None, 1)
 
         # setup cursor
         if state.search_mode:
@@ -137,87 +181,116 @@ class App(Window):
 
 
 class Head(Window):
-    def init(self):
+    def draw(self):
         if state.search_mode:
             info = '/' + state.search
         else:
-            info = "lyrics - press H for help."
-        self.add_str(0, 0, info, curses.color_pair(4))
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+            info = "lyrics - press F2 for help."
+        self.add_str(0, 0, info, color.GREEN)
+        self.win_curses.bkgd(' ', color.BG_GREEN)
         self.win_curses.noutrefresh()
         self.win_curses.keypad(1)  # because it does the key handling
 
 
 class Footer(Window):
-    def init(self):
+    def draw(self):
         self.win_curses.bkgd(' ')
         last = state.keyboard_repeat + state.last_command
-        self.add_str(-5, 0, last, curses.color_pair(2), align='right')
+        self.add_str(-5, 0, last, color.BLUE, align='right')
         self.win_curses.noutrefresh()
 
 
 class StatusLine(Window):
-    def init(self):
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+    def draw(self):
+        self.win_curses.bkgd(' ', color.BG_GREEN)
 
         r = 'repeat' if state.repeat else 'solo' if state.repeat_solo \
                                                         else 'no-repeat'
         status = "[%s, %s]" % (r, 'random' if state.random else 'no-random')
-        self.add_str(-1, 0, status, curses.color_pair(2), align='right')
+        self.add_str(-1, 0, status, color.BLUE, align='right')
 
         if state.playing is not None:
             length = self.width - 2 - len(status)
-            col = curses.color_pair(7)
+            col = color.BG_GREEN
             self.add_str(0, 0, state.playing.format(length, album=True), col)
 
-        self.win_curses.bkgd(' ', curses.color_pair(7))
+        self.win_curses.bkgd(' ', color.BG_GREEN)
         self.win_curses.noutrefresh()
 
 
-class Lyrics(Window):
-    def init(self):
-        self.win_curses.noutrefresh()
+class Lyrics(NavigableWindow):
+    @property
+    def lines(self):
+        """ returns the lines """
+        if state.show_help:
+            txt = "Help\n" + keys.help_documentation()
+            txt += "\nWritten by David Halter -> http://jedidjah.ch"
+        else:
+            txt = state.lyrics or ''
+
+        w = self._real_width
+        lines = []
+        for line in txt.splitlines():
+            if line == '':
+                lines.append('')
+            else:
+                lines += textwrap.wrap(line, w)
+        return lines
+
 
     def draw(self):
+        self.win_curses.noutrefresh()
         self.win_curses.erase()
         #self.win_curses.box()
 
         length, max_display = self.clean_position(-2, -2)
 
-        col = curses.color_pair(1)
-        if state.show_help:
-            txt = "Help\n" + keys.help_documentation()
-            txt += "\nWritten by David Halter -> http://jedidjah.ch"
-        else:
-            txt = state.lyrics.replace('\n\n', '\n')
-
-        for i, line in enumerate(txt.splitlines()):
-            self.add_str(1, i + 1, line, col)
-
+        lines = self.lines
         self.win_curses.bkgd(' ')
+        debug.debug('t', self.visible_in_window())
+        for i, line_nr in enumerate(range(*self.visible_in_window())):
+            col = color.DEFAULT
+            if state.current_window == self and self.cursor_at == line_nr:
+                col = color.BG_MAGENTA
+                self.win_curses.hline(i + 1, 1, ' ', length, col)
+            try:
+                self.add_str(1, i + 1, lines[line_nr], col)
+            except IndexError:
+                # thread problems
+                break
+
         self.win_curses.refresh()
 
+    def get_num_lines(self):
+        return len(self.lines)
 
-class SongList(Window):
-    def init(self):
-        self.win_curses.noutrefresh()
 
+class SongList(NavigableWindow):
     def draw(self):
+        self.win_curses.noutrefresh()
         self.win_curses.erase()
         self.win_curses.box()
         self.win_curses.bkgd(' ')
 
         length, max_display = self.clean_position(-2, -2)
         playlist = state.playlist
-        for i, song in enumerate(playlist.visible_in_window(max_display)):
+        _range = range(*self.visible_in_window())
+        for i, song_nr in enumerate(_range):
+            try:
+                song = playlist[song_nr]
+            except IndexError:
+                break
             if song == state.playing and song == playlist.selected:
-                col = curses.color_pair(9)
+                col = color.BG_GREEN
             elif song == playlist.selected:
-                col = curses.color_pair(6)
+                col = color.BG_MAGENTA
             elif song == state.playing:
-                col = curses.color_pair(4)
+                col = color.GREEN
             else:
-                col = curses.color_pair(5)
+                col = color.DEFAULT
+
+            if state.current_window != self:
+                col = color.DEFAULT
 
             if song == state.playing or song == playlist.selected:
                 self.win_curses.hline(i + 1, 1, ' ', length, col)
@@ -227,7 +300,11 @@ class SongList(Window):
         self.win_curses.refresh()
 
     def move_cursor(self, x, y):
-        # later we could also check for other lists here.
-        state.playlist.move_selected(y)
+        super(SongList, self).move_cursor(x, y)
+        state.playlist.selected = state.playlist[self.cursor_at]
+
+    def get_num_lines(self):
+        debug.debug('asdf', len(state.playlist.songs))
+        return len(state.playlist.songs)
 
 main_app = App()

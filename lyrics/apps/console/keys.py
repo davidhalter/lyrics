@@ -2,7 +2,6 @@
 
 import os
 import re
-import curses.ascii
 
 import player
 from lyrics import debug
@@ -11,28 +10,31 @@ from states import state
 import app
 
 curses_mapping = {
-    curses.KEY_NPAGE:       '<PageDown>',
-    curses.KEY_PPAGE:       '<PageUp>',
-    curses.KEY_DOWN:        '<Down>',
-    curses.KEY_UP:          '<Up>',
-    curses.KEY_BACKSPACE:   '<BS>',
-    curses.KEY_LEFT:        '<Left>',
-    curses.KEY_RIGHT:       '<Right>',
-    curses.ascii.NL:        '<Enter>',
-    curses.ascii.ESC:       '<ESC>',
-    curses.ascii.SP:        '<SPACE>',
-    curses.KEY_F1:          '<F1>',
-    curses.KEY_F2:          '<F2>',
-    curses.KEY_F3:          '<F3>',
-    curses.KEY_F4:          '<F4>',
-    curses.KEY_F5:          '<F5>',
-    curses.KEY_F6:          '<F6>',
-    curses.KEY_F7:          '<F7>',
-    curses.KEY_F8:          '<F8>',
-    curses.KEY_F9:          '<F9>',
-    curses.KEY_F10:         '<F10>',
-    curses.KEY_F11:         '<F11>',
-    curses.KEY_F12:         '<F12>',
+    'KEY_NPAGE':        '<PageDown>',
+    'KEY_PPAGE':        '<PageUp>',
+    'KEY_DOWN':         '<Down>',
+    'KEY_UP':           '<Up>',
+    'KEY_BACKSPACE':    '<BS>',
+    'KEY_LEFT':         '<Left>',
+    'KEY_RIGHT':        '<Right>',
+    'KEY_END':          '<End>',
+    'KEY_HOME':         '<Home>',
+    '\n':               '<C-J>',
+    '\r':               '<Enter>',
+    '^[':               '<ESC>',
+    ' ':                '<SPACE>',
+    'KEY_F(1)':         '<F1>',
+    'KEY_F(2)':         '<F2>',
+    'KEY_F(3)':         '<F3>',
+    'KEY_F(4)':         '<F4>',
+    'KEY_F(5)':         '<F5>',
+    'KEY_F(6)':         '<F6>',
+    'KEY_F(7)':         '<F7>',
+    'KEY_F(8)':         '<F8>',
+    'KEY_F(9)':         '<F9>',
+    'KEY_F(10)':        '<F10>',
+    'KEY_F(11)':        '<F11>',
+    'KEY_F(12)':        '<F12>',
 }
 for c in curses_mapping:
     curses_mapping[c] = curses_mapping[c].upper()
@@ -72,19 +74,20 @@ def help_documentation():
     return s
 
 
-def event_handler(key_chr):
-    debug.debug('key pressed', repr(key_chr))
+def event_handler(key_str):
+    debug.debug('key pressed', repr(key_str))
 
     # strip ctrl
     #key_chr = curses.ascii.ctrl(key_chr)
 
     try:
-        key_str = curses_mapping[key_chr]
+        key_str = curses_mapping[key_str]
     except KeyError:
-        key_str = chr(key_chr)
+        if len(key_str) > 1 and key_str[0] == '^':
+            key_str = '<C-%s>' % key_str[1:]
         # TODO catch control keys
 
-    debug.debug('key pressed', repr(key_chr), key_str)
+    debug.debug('key resolved as', key_str)
 
     if state.search_mode:
         if key_str == '<SPACE>':
@@ -143,7 +146,9 @@ def _after_movement():
     song = state.playlist.selected
     if song is not None:
         state.lyrics = 'trying to load lyrics.'
-        if song not in state.fetched_songs:
+        if song in state.fetched_songs:
+            state.lyrics = song._lyrics
+        else:
             state.fetched_songs.append(song)
             song.get_lyrics_thread(got_lyrics)
 
@@ -161,19 +166,20 @@ def move_up():
 
 @key('l', '<Right>')
 def move_right():
-    _move_cursor(x=1)
+    if state.split_screen:
+        state.current_window = state.window_lyrics
 
 @key('h', '<Left>')
 def move_left():
-    _move_cursor(x=-1)
+    state.current_window = state.window_song_list
 
 @key('<C-U>', 'u')
 def move_half_page_up():
-    _move_cursor(y=-int(state.current_window.height / 2))
+    _move_cursor(y=-int(state.current_window.real_height / 2))
 
 @key('<C-D>', 'd')
 def move_half_page_down():
-    _move_cursor(y=int(state.current_window.height / 2))
+    _move_cursor(y=int(state.current_window.real_height / 2))
 
 @key('<C-B>', '<PageUp>')
 def move_page_up():
@@ -190,6 +196,33 @@ def repeat_last_action():
             break
     if state.command_list:
         execute_key_command(command, repeat)
+
+@key('g', '<Home>')
+def move_to_home():
+    _move_cursor(y=-state.current_window.cursor_at)
+
+@key('G', '<End>')
+def move_to_end():
+    y = -state.current_window.cursor_at + state.current_window.get_num_lines()
+    _move_cursor(y=y)
+
+@key('H')
+def move_to_high():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + w.scroll_off
+    _move_cursor(y=y)
+
+@key('M')
+def move_to_middle():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + int(w.real_height / 2)
+    _move_cursor(y=y)
+
+@key('L')
+def move_to_low():
+    w = state.current_window
+    y = -w.cursor_at + w.view_at + w.real_height - w.scroll_off - 1
+    _move_cursor(y=y)
 
 # ------------------------------------------------------------------------
 # gui modifications
@@ -219,7 +252,7 @@ def repeat_solo():
     """repeat solo - iterate solo"""
     state.repeat_solo = not state.repeat_solo
 
-@key('H', '<F3>')
+@key(':', '<F2>')
 def help():
     """help - shows this"""
     state.show_help = not state.show_help
@@ -312,6 +345,7 @@ def previous():
 def clear_search():
     if state.playlist.parent is not None:
         state.playlist = state.playlist.parent
+        state.window_song_list.cursor_at = state.playlist.get_selected_index()
 
 @key('/')
 def search():
@@ -353,6 +387,9 @@ def search_backspace():
 def search_enter():
     state.search_mode = False
     _search_update()
+    state.window_song_list.view_at = 0
+    state.window_song_list.cursor_at = 0
+    state.playlist.selected = state.playlist.songs[0]
 
 @key('<Esc>', mode='search')
 def search_cancel():

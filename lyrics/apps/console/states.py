@@ -25,6 +25,12 @@ class States(object):
         self._repeat = True
         self._repeat_solo = False
 
+        self.window_head = None
+        self.window_song_list = None
+        self.window_lyrics = None
+        self.window_status_list = None
+        self.window_footer = None
+
     @property
     def last_command(self):
         return self._last_command
@@ -91,6 +97,7 @@ class States(object):
         if value:
             self.split_screen = True
         elif not self.show_help:
+            self.current_window = state.window_song_list
             self.split_screen = False
 
 

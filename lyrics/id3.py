@@ -12,7 +12,13 @@ class Song(object):
         self.use_cache = use_cache
         self.__id3 = None
         self.broken = False
-        self.lyrics = None
+        self._lyrics = None
+
+    def __repr__(self):
+        if not self.artist:
+            return unicode(self.file_name)
+        return "<%s: %s - %s>" % (self.__class__.__name__, self.artist,
+                                                                self.song)
 
     @property
     def file_name(self):
@@ -75,7 +81,7 @@ class Song(object):
     def get_lyrics_thread(self, on_finish_callback):
         def run_in_thread():
             lyr = lyrics.get(self.artist, self.song, self.album)
-            self.lyrics = lyr
+            self._lyrics = lyr
             if on_finish_callback is not None:
                 on_finish_callback(self, lyr)
 

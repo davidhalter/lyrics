@@ -8,11 +8,12 @@ def load(artist, song, album):
     if settings.use_database:
         return _LyricsDb.load(artist, song, album)
     else:
-        return None
+        raise LookupError('settings.use_database = False')
 
 
 def save(artist, song, album, lyrics):
     if settings.use_database:
+        debug.debug('save' )
         return _LyricsDb.save(artist, song, album, lyrics)
 
 
@@ -30,7 +31,11 @@ _db_lock = threading.Lock()
 def _sqlite_threadsafe(func):
     def wrapper(*args, **kwargs):
         _db_lock.acquire()
-        result = func(*args, **kwargs)
+        try:
+            result = func(*args, **kwargs)
+        except:
+            _db_lock.release()
+            raise
         _db_lock.release()
         return result
     return wrapper
@@ -43,7 +48,7 @@ class _LyricsDb(object):
         artist text not null,
         song text not null,
         album text not null,
-        lyrics text not null,
+        lyrics text null,
         unique(artist, song, album)
     )
     """
@@ -58,6 +63,7 @@ class _LyricsDb(object):
 
     @_sqlite_threadsafe
     def save(self, *args):
+        debug.debug('savex', args)
         connection, cursor = self.get_cursor()
         cursor.execute(self._insert, args)
         connection.commit()
@@ -67,7 +73,9 @@ class _LyricsDb(object):
         connection, cursor = self.get_cursor()
         cursor.execute(self._select, args)
         row = cursor.fetchone()
-        return row[0] if row is not None else None
+        if row is None:
+            raise LookupError('Row not found')
+        return row[0]
 
 
 class ID3Cache(object):

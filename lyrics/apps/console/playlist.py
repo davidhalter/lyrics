@@ -14,11 +14,6 @@ class Song(object):
     def __getattr__(self, name):
         return getattr(self._song, name)
 
-    def __repr__(self):
-        if not self.artist:
-            return unicode(self.file_name)
-        return "%s - %s" % (self.artist, self.song)
-
     def format(self, max_len, album=False):
         """produce something liket this: 'sigh no.. - mumford a..'"""
         if not self.artist:
@@ -48,32 +43,12 @@ class Song(object):
                 or string.lower() in self.artist.lower()
 
 
-class StringList(object):
-    def __init__(self, strings, index=0):
-        self.strings = strings
-        self.index = 0
-
-    def visible_in_window(self, count):
-        length = len(self.songs)
-        lookat = max(0, self.index - int(count / 2))
-        lookat = min(lookat, length - int(count / 2))
-
-        selection = self.songs[lookat:lookat + count]
-        return selection
-
-    def move_selected(self, count):
-        """count can be negative"""
-        self.index += count
-        self.index = min(max(self.index, 0), len(self.strings) - 1)
-
-
-class Playlist(StringList):
+class Playlist(object):
     def __init__(self, songs, selected=None, parent=None):
-        super(Playlist, self).__init__(songs)
-        self.songs = songs
-        self.selected = selected or self.songs[0] if self.songs else None
         self.parent = parent
+        self.songs = songs
         self.sort()
+        self.selected = selected or self.songs[0] if self.songs else None
 
     def __len__(self):
         return len(self.songs)
@@ -82,27 +57,18 @@ class Playlist(StringList):
         return self.songs[key]
 
     def sort(self):
-        sort_func = lambda song: (song.artist, song.song)
+        sort_func = lambda song: (not song.artist, song.artist, song.song)
         self.songs = sorted(self.songs, key=sort_func)
 
     def search(self, string):
         return Playlist([s for s in self.songs if s.search(string)],
                                 selected=self.selected, parent=self)
 
-    def _set_index(self):
+    def get_selected_index(self):
         try:
-            self.index = self.songs.index(self.selected)
-        except  ValueError:
-            self.index = 0
-
-    def visible_in_window(self, *args, **kwargs):
-        self._set_index()
-        return super(Playlist, self).visible_in_window(*args, **kwargs)
-
-    def move_selected(self, *args, **kwargs):
-        self._set_index()
-        super(Playlist, self).move_selected(*args, **kwargs)
-        self.selected = self.songs[self.index]
+            return self.songs.index(self.selected)
+        except ValueError:
+            return 0
 
     def next(self, song):
         if song is None:
@@ -122,7 +88,6 @@ class Playlist(StringList):
         else:
             return self.songs[i - 1]
 
-
     def random(self, song=None):
         if len(self.songs) == 1:
             return self.songs[0]
@@ -136,6 +101,13 @@ class Playlist(StringList):
 
     @classmethod
     def from_path(cls, paths, recursive=True):
+        if not paths:
+            return cls.from_library()
+
+        def is_sound(path):
+            return path[-4:] in ('.mp3', '.wav', '.ogg', '.wmv', 'm3u') \
+                or path[-5:] == '.flac'
+
         debug.debug('load from', paths)
         new_paths = []
         for path in paths:
@@ -143,7 +115,9 @@ class Playlist(StringList):
             path = abspath(expandvars(expanduser(path)))
             for root, dirs, files in os.walk(path):
                 for name in files:
-                    new_paths.append(join(root, name))
+                    p = join(root, name)
+                    if is_sound(p):
+                        new_paths.append(p)
                 if recursive is False:
                     break
         #debug.debug('song paths', paths)
